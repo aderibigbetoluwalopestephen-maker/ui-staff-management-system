@@ -193,9 +193,9 @@ function leaveReqFromDb(row) {
   };
 }
 
-// ══════════════════════════════════
+
 // SHARED COMPONENTS
-// ══════════════════════════════════
+
 function Avatar({name,photo,size=36}){
   if(photo) return(
     <div style={{width:size,height:size,borderRadius:"50%",overflow:"hidden",border:`2px solid ${GOLD}`,flexShrink:0}}>
@@ -284,9 +284,9 @@ function PassportUpload({value,onChange}){
   );
 }
 
-// ══════════════════════════════════
+
 // UIHeader — FIX: logo beside text
-// ══════════════════════════════════
+
 function UIHeader({rightContent}){
   return(
     <div style={{background:NAVY2,borderBottom:`3px solid ${GOLD}`}}>
@@ -294,7 +294,7 @@ function UIHeader({rightContent}){
         <div style={{display:"flex",alignItems:"center",gap:12}}>
           {/* University of Ibadan logo */}
           <img
-            src="https://upload.wikimedia.org/wikipedia/en/8/8a/University_of_Ibadan_logo.png"
+            src="https://www.bing.com/th/id/OIP.B6Ay7P-bfic37pK32qd1yQAAAA?w=178&h=211&c=8&rs=1&qlt=90&o=6&pid=3.1&rm=2"
             alt="UI logo"
             style={{height:50,width:50,objectFit:"contain",flexShrink:0}}
             onError={e=>{
@@ -453,6 +453,7 @@ function LeaveRequestForm({onBack, onSubmit}){
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   function setF(k,v){ setForm(f=>({...f,[k]:v})); if(errors[k]) setErrors(e=>({...e,[k]:undefined})); }
 
@@ -473,8 +474,14 @@ function LeaveRequestForm({onBack, onSubmit}){
     const errs=validate();
     if(Object.keys(errs).length){ setErrors(errs); return; }
     setSaving(true);
-    await onSubmit(form);
+    setSubmitError("");
+    const result = await onSubmit(form);
     setSaving(false);
+    // FIX: only show success screen if the save actually succeeded
+    if(result && result.success===false){
+      setSubmitError(result.error || "Something went wrong while submitting. Please try again.");
+      return;
+    }
     setSubmitted(true);
   }
 
@@ -503,20 +510,21 @@ function LeaveRequestForm({onBack, onSubmit}){
     <div style={{minHeight:"100vh",background:LGRAY,fontFamily:"system-ui,sans-serif"}}>
       <UIHeader rightContent={<button onClick={onBack} style={{background:"transparent",border:`1px solid rgba(255,255,255,0.3)`,borderRadius:4,color:"rgba(255,255,255,0.8)",fontSize:12,cursor:"pointer",padding:"6px 14px"}}>← Back</button>}/>
       <div style={{background:`linear-gradient(135deg,${NAVY2},${NAVY})`,padding:"28px 24px",borderBottom:`3px solid ${GOLD}`}}>
-        <div style={{maxWidth:600,margin:"0 auto"}}>
+        <div className="ui-form-shell" style={{maxWidth:600,margin:"0 auto"}}>
           <div style={{fontSize:10,color:GOLD,letterSpacing:3,textTransform:"uppercase",fontWeight:600,marginBottom:4}}>University of Ibadan</div>
           <h2 style={{color:WHITE,fontSize:22,fontWeight:800,margin:0}}>Leave Request Form</h2>
           <p style={{color:"rgba(255,255,255,0.6)",fontSize:12,margin:"4px 0 0"}}>Submit your leave application for admin approval</p>
         </div>
       </div>
-      <div style={{maxWidth:600,margin:"28px auto",padding:"0 16px"}}>
+      <div className="ui-form-shell" style={{maxWidth:600,margin:"28px auto",padding:"0 16px"}}>
+        {submitError&&<div style={{background:"#fef2f2",color:"#991b1b",border:"1px solid #fecaca",borderRadius:8,padding:"12px 16px",fontSize:13,marginBottom:14,fontWeight:500}}>⚠️ {submitError}</div>}
         <div style={{background:WHITE,borderRadius:12,border:`1px solid ${GREENM}`,overflow:"hidden"}}>
           <div style={{padding:24,display:"flex",flexDirection:"column",gap:18}}>
 
             {/* Staff identification */}
             <div style={{background:LGRAY,borderRadius:10,padding:16,border:`1px solid ${GREENM}`}}>
               <p style={{fontWeight:700,color:NAVY2,fontSize:13,margin:"0 0 14px"}}>👤 Staff Identification</p>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+              <div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                 <Field label="Employee ID *" error={errors.employeeId}>
                   <FInput value={form.employeeId} onChange={e=>setF("employeeId",e.target.value)} placeholder="UI-AB-2024" hasError={!!errors.employeeId}/>
                 </Field>
@@ -546,7 +554,7 @@ function LeaveRequestForm({onBack, onSubmit}){
                   </div>
                 </div>
               )}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginTop:14}}>
+              <div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginTop:14}}>
                 <Field label="Start Date *" error={errors.startDate}>
                   <FInput value={form.startDate} onChange={e=>setF("startDate",e.target.value)} type="date" hasError={!!errors.startDate}/>
                 </Field>
@@ -570,7 +578,7 @@ function LeaveRequestForm({onBack, onSubmit}){
               ℹ️ Your request will be reviewed by the admin. You will be notified of approval or rejection.
             </div>
           </div>
-          <div style={{display:"flex",justifyContent:"space-between",padding:"14px 24px",borderTop:`1px solid ${GREENM}`,background:LGRAY}}>
+          <div className="ui-form-actions" style={{display:"flex",justifyContent:"space-between",padding:"14px 24px",borderTop:`1px solid ${GREENM}`,background:LGRAY}}>
             <button onClick={onBack} style={{padding:"8px 16px",border:`1px solid ${GREENM}`,borderRadius:6,background:WHITE,cursor:"pointer",color:NAVY,fontSize:13}}>← Cancel</button>
             <button onClick={handleSubmit} disabled={saving} style={{background:saving?"#aaa":GOLD,color:saving?WHITE:NAVY2,border:"none",borderRadius:6,padding:"8px 24px",fontWeight:700,cursor:saving?"not-allowed":"pointer",fontSize:13}}>
               {saving?"Submitting…":"Submit Request ✓"}
@@ -639,6 +647,7 @@ function StaffRegistration({onSubmit,onBack,fieldConfig}){
   const [errors,setErrors]=useState({});
   const [submitted,setSubmitted]=useState(false);
   const [saving,setSaving]=useState(false);
+  const [submitError,setSubmitError]=useState("");
 
   useEffect(()=>{
     if(form.firstName||form.lastName||form.startDate){
@@ -682,9 +691,16 @@ function StaffRegistration({onSubmit,onBack,fieldConfig}){
       return;
     }
     setSaving(true);
+    setSubmitError("");
     const customFields=fieldConfig.filter(f=>f.custom&&f.enabled);
-    await onSubmit({...form,employeeId:form.employeeId||genId(form.firstName,form.lastName,form.startDate),_customFields:customFields});
+    const result = await onSubmit({...form,employeeId:form.employeeId||genId(form.firstName,form.lastName,form.startDate),_customFields:customFields});
     setSaving(false);
+    // FIX: previously this always showed the success screen even when the
+    // Supabase insert failed. Now we check the actual result first.
+    if(result && result.success===false){
+      setSubmitError(result.error || "Something went wrong while saving your registration. Please try again.");
+      return;
+    }
     setSubmitted(true);
   }
 
@@ -724,14 +740,15 @@ function StaffRegistration({onSubmit,onBack,fieldConfig}){
     <div style={{minHeight:"100vh",background:LGRAY,fontFamily:"system-ui,sans-serif"}}>
       <UIHeader rightContent={<button onClick={onBack} style={{background:"transparent",border:`1px solid rgba(255,255,255,0.3)`,borderRadius:4,color:"rgba(255,255,255,0.8)",fontSize:12,cursor:"pointer",padding:"6px 14px"}}>← Back</button>}/>
       <div style={{background:`linear-gradient(135deg,${NAVY2},${NAVY})`,padding:"28px 24px",borderBottom:`3px solid ${GOLD}`}}>
-        <div style={{maxWidth:700,margin:"0 auto"}}>
+        <div className="ui-form-shell" style={{maxWidth:700,margin:"0 auto"}}>
           <div style={{fontSize:10,color:GOLD,letterSpacing:3,textTransform:"uppercase",fontWeight:600,marginBottom:4}}>University of Ibadan</div>
           <h2 style={{color:WHITE,fontSize:22,fontWeight:800,margin:0}}>Staff Registration Form</h2>
           <p style={{color:"rgba(255,255,255,0.6)",fontSize:12,margin:"4px 0 0"}}>Complete all sections to register your employment details</p>
         </div>
       </div>
-      <div style={{maxWidth:700,margin:"28px auto",padding:"0 16px"}}>
-        <div style={{display:"flex",background:WHITE,borderRadius:10,border:`1px solid ${GREENM}`,overflow:"hidden",marginBottom:20}}>
+      <div className="ui-form-shell" style={{maxWidth:700,margin:"28px auto",padding:"0 16px"}}>
+        {submitError&&<div style={{background:"#fef2f2",color:"#991b1b",border:"1px solid #fecaca",borderRadius:8,padding:"12px 16px",fontSize:13,marginBottom:14,fontWeight:500}}>⚠️ {submitError}</div>}
+        <div className="ui-tabs" style={{display:"flex",background:WHITE,borderRadius:10,border:`1px solid ${GREENM}`,overflow:"hidden",marginBottom:20}}>
           {SECTIONS.map((s,i)=>(
             <button key={s} onClick={()=>setSection(i)} style={{flex:1,padding:"12px 8px",fontSize:11,fontWeight:600,border:"none",borderBottom:section===i?`3px solid ${NAVY}`:"3px solid transparent",background:section===i?`${NAVY}10`:"transparent",cursor:"pointer",color:section===i?NAVY:"#777"}}>
               <span style={{display:"block",fontSize:16,marginBottom:3}}>{["👤","📞","💼","🚨"][i]}</span>{s}
@@ -742,40 +759,40 @@ function StaffRegistration({onSubmit,onBack,fieldConfig}){
           <div style={{padding:24}}>
             {section===0&&(
               <div style={{display:"flex",flexDirection:"column",gap:16}}>
-                <div style={{display:"flex",gap:16,alignItems:"flex-start",padding:"16px",background:LGRAY,borderRadius:10,border:`1px solid ${GREENM}`}}>
+                <div className="ui-photo-row" style={{display:"flex",gap:16,alignItems:"flex-start",padding:"16px",background:LGRAY,borderRadius:10,border:`1px solid ${GREENM}`}}>
                   <PassportUpload value={form.passportPhoto} onChange={v=>setF("passportPhoto",v)}/>
                   <div style={{flex:1}}>
                     <p style={{fontWeight:700,color:NAVY2,fontSize:16,margin:"0 0 4px"}}>{form.firstName||form.lastName?`${form.firstName||""} ${form.lastName||""}`.trim():"Your name will appear here"}</p>
                     <div style={{display:"inline-block",background:NAVY,color:GOLD,padding:"4px 12px",borderRadius:20,fontSize:12,fontWeight:700,letterSpacing:1,marginBottom:8}}>{form.employeeId||"ID auto-generated"}</div>
                   </div>
                 </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                <div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                   {sectionFields(0).filter(f=>["firstName","lastName"].includes(f.id)).map(renderField)}
                 </div>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
+                <div className="ui-grid-3" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
                   {sectionFields(0).filter(f=>!["firstName","lastName"].includes(f.id)).map(renderField)}
                 </div>
-                {customSectionFields(0).length>0&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>{customSectionFields(0).map(f=><Field key={f.id} label={f.label}><FInput value={form[f.id]||""} onChange={e=>setF(f.id,e.target.value)} placeholder={f.placeholder||""}/></Field>)}</div>}
+                {customSectionFields(0).length>0&&<div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>{customSectionFields(0).map(f=><Field key={f.id} label={f.label}><FInput value={form[f.id]||""} onChange={e=>setF(f.id,e.target.value)} placeholder={f.placeholder||""}/></Field>)}</div>}
               </div>
             )}
             {section===1&&(
               <div style={{display:"flex",flexDirection:"column",gap:16}}>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                <div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                   {sectionFields(1).filter(f=>["email","phone"].includes(f.id)).map(renderField)}
                 </div>
                 {sectionFields(1).filter(f=>f.id==="address").map(renderField)}
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                <div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                   {sectionFields(1).filter(f=>["city","state"].includes(f.id)).map(renderField)}
                 </div>
-                {customSectionFields(1).length>0&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>{customSectionFields(1).map(f=><Field key={f.id} label={f.label}><FInput value={form[f.id]||""} onChange={e=>setF(f.id,e.target.value)} placeholder={f.placeholder||""}/></Field>)}</div>}
+                {customSectionFields(1).length>0&&<div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>{customSectionFields(1).map(f=><Field key={f.id} label={f.label}><FInput value={form[f.id]||""} onChange={e=>setF(f.id,e.target.value)} placeholder={f.placeholder||""}/></Field>)}</div>}
               </div>
             )}
             {section===2&&(
               <div style={{display:"flex",flexDirection:"column",gap:16}}>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                <div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                   {sectionFields(2).filter(f=>["jobTitle","department"].includes(f.id)).map(renderField)}
                 </div>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
+                <div className="ui-grid-3" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
                   {sectionFields(2).filter(f=>["employmentType","startDate"].includes(f.id)).map(renderField)}
                   {statusField&&<Field label="Status"><FSelect value={form.status||"Active"} onChange={e=>setF("status",e.target.value)} options={STATUS_OPS}/></Field>}
                 </div>
@@ -785,7 +802,7 @@ function StaffRegistration({onSubmit,onBack,fieldConfig}){
                       <span style={{fontSize:18}}>🏖️</span>
                       <div><p style={{fontWeight:700,color:"#7a5c10",fontSize:13,margin:0}}>Leave Details</p><p style={{fontSize:11,color:"#a07a20",margin:0}}>Return date is set automatically</p></div>
                     </div>
-                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                    <div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                       <Field label="Type of leave *" error={errors.leaveType}><FSelect value={form.leaveType||""} onChange={e=>setF("leaveType",e.target.value)} options={LEAVE_TYPES} hasError={!!errors.leaveType}/></Field>
                       <Field label="Leave start date *" error={errors.leaveStartDate}><FInput value={form.leaveStartDate||""} onChange={e=>setF("leaveStartDate",e.target.value)} type="date" hasError={!!errors.leaveStartDate}/></Field>
                     </div>
@@ -797,7 +814,7 @@ function StaffRegistration({onSubmit,onBack,fieldConfig}){
                     <LeaveInfoBanner leaveType={form.leaveType} leaveStartDate={form.leaveStartDate} returnDate={form.returnDate}/>
                   </div>
                 )}
-                {customSectionFields(2).length>0&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>{customSectionFields(2).map(f=><Field key={f.id} label={f.label}><FInput value={form[f.id]||""} onChange={e=>setF(f.id,e.target.value)} placeholder={f.placeholder||""}/></Field>)}</div>}
+                {customSectionFields(2).length>0&&<div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>{customSectionFields(2).map(f=><Field key={f.id} label={f.label}><FInput value={form[f.id]||""} onChange={e=>setF(f.id,e.target.value)} placeholder={f.placeholder||""}/></Field>)}</div>}
               </div>
             )}
             {section===3&&(
@@ -805,15 +822,15 @@ function StaffRegistration({onSubmit,onBack,fieldConfig}){
                 <div style={{background:GOLDL,border:`1px solid ${GOLDM}`,borderRadius:8,padding:"12px 14px"}}>
                   <p style={{fontSize:13,color:"#7a5c10",margin:0,fontWeight:500}}>🚨 Emergency contact information is kept confidential.</p>
                 </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                <div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                   {sectionFields(3).filter(f=>["emergencyName","emergencyRelation"].includes(f.id)).map(renderField)}
                 </div>
                 {sectionFields(3).filter(f=>f.id==="emergencyPhone").map(renderField)}
-                {customSectionFields(3).length>0&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>{customSectionFields(3).map(f=><Field key={f.id} label={f.label}><FInput value={form[f.id]||""} onChange={e=>setF(f.id,e.target.value)} placeholder={f.placeholder||""}/></Field>)}</div>}
+                {customSectionFields(3).length>0&&<div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>{customSectionFields(3).map(f=><Field key={f.id} label={f.label}><FInput value={form[f.id]||""} onChange={e=>setF(f.id,e.target.value)} placeholder={f.placeholder||""}/></Field>)}</div>}
               </div>
             )}
           </div>
-          <div style={{display:"flex",justifyContent:"space-between",padding:"14px 24px",borderTop:`1px solid ${GREENM}`,background:LGRAY}}>
+          <div className="ui-form-actions" style={{display:"flex",justifyContent:"space-between",padding:"14px 24px",borderTop:`1px solid ${GREENM}`,background:LGRAY}}>
             {section>0?<button onClick={()=>setSection(s=>s-1)} style={{padding:"8px 16px",border:`1px solid ${GREENM}`,borderRadius:6,background:WHITE,cursor:"pointer",color:NAVY,fontSize:13}}>← Previous</button>:<div/>}
             {section<3?<button onClick={()=>setSection(s=>s+1)} style={{background:NAVY,color:WHITE,border:"none",borderRadius:6,padding:"8px 20px",fontWeight:600,cursor:"pointer",fontSize:13}}>Next →</button>
               :<button onClick={handleSubmit} disabled={saving} style={{background:saving?"#aaa":GOLD,color:saving?WHITE:NAVY2,border:"none",borderRadius:6,padding:"8px 24px",fontWeight:700,cursor:saving?"not-allowed":"pointer",fontSize:13}}>{saving?"Saving…":"Submit Registration ✓"}</button>}
@@ -889,10 +906,9 @@ function LeaveRequestsAdmin({requests, onApprove, onReject, onRefresh}){
               ? Math.ceil((new Date(req.endDate)-new Date(req.startDate))/(1000*60*60*24))+1
               : null;
             return(
-              <div key={req.id||i} style={{background:WHITE,borderRadius:12,border:`1px solid ${req.status==="Pending"?GOLDM:req.status==="Approved"?GREENM:"#fecaca"}`,overflow:"hidden",boxShadow:"0 1px 6px rgba(0,0,0,0.05)"}}>
-                {/* <div style={{padding:"16px 20px",display:"flex",alignItems:"flex-start","gap:14",flexWrap:"wrap","gap:14"}}> */}
+              <div key={req.id||i} className="ui-leave-card" style={{background:WHITE,borderRadius:12,border:`1px solid ${req.status==="Pending"?GOLDM:req.status==="Approved"?GREENM:"#fecaca"}`,overflow:"hidden",boxShadow:"0 1px 6px rgba(0,0,0,0.05)",padding:"16px 20px",display:"flex",alignItems:"flex-start",gap:14,flexWrap:"wrap"}}>
                   <div style={{width:44,height:44,borderRadius:"50%",background:LGRAY,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0,border:`1px solid ${GREENM}`}}>{cfg.icon}</div>
-                  <div style={{flex:1,minWidth:0}}>
+                  <div style={{flex:1,minWidth:200}}>
                     <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:4}}>
                       <p style={{margin:0,fontWeight:700,fontSize:14,color:NAVY2}}>{req.staffName}</p>
                       <span style={{fontSize:11,background:NAVY,color:GOLD,padding:"2px 8px",borderRadius:20,fontWeight:700}}>{req.employeeId}</span>
@@ -918,7 +934,6 @@ function LeaveRequestsAdmin({requests, onApprove, onReject, onRefresh}){
                     </div>
                   )}
                 </div>
-              // </div>
             );
           })}
         </div>
@@ -976,7 +991,7 @@ function DashboardHome({staff,activity,currentAdmin,pendingLeaveCount}){
   ];
   return(
     <div style={{display:"flex",flexDirection:"column",gap:24}}>
-      <div style={{background:`linear-gradient(135deg,${NAVY2},${NAVYL})`,borderRadius:14,padding:"24px 28px",display:"flex",alignItems:"center",gap:20,border:`1px solid ${GOLD}33`}}>
+      <div className="ui-welcome-banner" style={{background:`linear-gradient(135deg,${NAVY2},${NAVYL})`,borderRadius:14,padding:"24px 28px",display:"flex",alignItems:"center",gap:20,border:`1px solid ${GOLD}33`,flexWrap:"wrap"}}>
         {currentAdmin?.photo
           ?<div style={{width:64,height:64,borderRadius:"50%",overflow:"hidden",border:`3px solid ${GOLD}`,flexShrink:0}}><img src={currentAdmin.photo} alt="Admin" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
           :<div style={{width:64,height:64,borderRadius:"50%",background:GOLD,display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,fontWeight:800,color:NAVY2,flexShrink:0,border:`3px solid ${GOLD}55`}}>{currentAdmin?.username?.[0]?.toUpperCase()||"A"}</div>
@@ -991,7 +1006,7 @@ function DashboardHome({staff,activity,currentAdmin,pendingLeaveCount}){
           <p style={{margin:0,fontSize:11,fontWeight:600}}>Pending leave{pendingLeaveCount===1?"":"s"}</p>
         </div>}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:14}}>
+      <div className="ui-stats-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:14}}>
         {stats.map(s=>(
           <div key={s.label} style={{background:WHITE,borderRadius:10,padding:"16px 18px",border:`1px solid ${GREENM}`,borderTop:`3px solid ${s.color}`}}>
             <p style={{fontSize:11,color:s.color,fontWeight:600,margin:0,letterSpacing:0.5}}>{s.label.toUpperCase()}</p>
@@ -1000,7 +1015,7 @@ function DashboardHome({staff,activity,currentAdmin,pendingLeaveCount}){
           </div>
         ))}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+      <div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
         {[{title:"Status breakdown",data:statusData},{title:"Staff by department",data:deptPieData}].map(({title,data})=>(
           <div key={title} style={{background:WHITE,borderRadius:10,padding:20,border:`1px solid ${GREENM}`}}>
             <p style={{fontWeight:600,color:NAVY2,fontSize:14,margin:"0 0 16px"}}>{title}</p>
@@ -1057,7 +1072,7 @@ function StaffDirectory({staff,onEdit,onDelete}){
       {filtered.length===0
         ?<div style={{textAlign:"center",padding:"56px 0",background:GREENL,borderRadius:12,border:`1px solid ${GREENM}`}}><p style={{fontSize:36,margin:"0 0 12px"}}>👥</p><p style={{fontWeight:600,color:NAVY2,fontSize:16,margin:"0 0 6px"}}>{staff.length===0?"No registrations yet":"No results"}</p><p style={{fontSize:13,color:"#666",margin:0}}>{staff.length===0?"Staff submissions will appear here.":"Try adjusting your filters."}</p></div>
         :<div style={{border:`1px solid ${GREENM}`,borderRadius:12,overflow:"hidden"}}>
-          <div style={{overflowX:"auto"}}>
+          <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
             <table style={{width:"100%",borderCollapse:"collapse",minWidth:860}}>
               <thead><tr style={{background:NAVY}}>{["Staff Member","Department","Job Title","Type","Status","Leave","Countdown","Actions"].map(h=><th key={h} style={{textAlign:"left",padding:"10px 14px",fontWeight:600,color:GOLD,fontSize:11,letterSpacing:0.5,whiteSpace:"nowrap"}}>{h.toUpperCase()}</th>)}</tr></thead>
               <tbody>{filtered.map((m,i)=>(
@@ -1105,7 +1120,7 @@ function ReportsPage({staff}){
   return(
     <div style={{display:"flex",flexDirection:"column",gap:24}}>
       <div><h2 style={{fontSize:20,fontWeight:700,color:NAVY2,margin:"0 0 4px"}}>Reports & Exports</h2><p style={{fontSize:13,color:"#666",margin:0}}>Download staff data as CSV files.</p></div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:14}}>
+      <div className="ui-reports-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:14}}>
         {reports.map(r=>(
           <div key={r.title} style={{background:WHITE,borderRadius:10,padding:20,border:`1px solid ${GREENM}`,display:"flex",flexDirection:"column",gap:10}}>
             <div><p style={{fontWeight:600,color:NAVY2,fontSize:14,margin:"0 0 4px"}}>{r.title}</p><p style={{fontSize:12,color:"#666",margin:0}}>{r.desc}</p></div>
@@ -1117,7 +1132,7 @@ function ReportsPage({staff}){
       <div style={{background:WHITE,borderRadius:10,border:`1px solid ${GREENM}`,overflow:"hidden"}}>
         <div style={{padding:"14px 18px",borderBottom:`1px solid ${GREENM}`,background:GREENL}}><p style={{fontWeight:600,color:NAVY2,fontSize:14,margin:0}}>Department summary</p></div>
         {deptSummary.length===0?<p style={{color:"#bbb",fontSize:13,textAlign:"center",padding:"32px 0"}}>No data yet</p>
-          :<table style={{width:"100%",borderCollapse:"collapse"}}>
+          :<div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",minWidth:520}}>
             <thead><tr style={{background:GREENL}}>{["Department","Total","Active","On Leave","Full-time"].map(h=><th key={h} style={{textAlign:"left",padding:"10px 16px",fontSize:11,fontWeight:600,color:NAVY,letterSpacing:0.4,borderBottom:`1px solid ${GREENM}`}}>{h.toUpperCase()}</th>)}</tr></thead>
             <tbody>{deptSummary.map((d,i)=>(
               <tr key={d.dept} style={{background:i%2===0?WHITE:GREENL}}>
@@ -1128,7 +1143,7 @@ function ReportsPage({staff}){
                 <td style={{padding:"11px 16px",borderBottom:`1px solid ${GREENM}`,color:"#555"}}>{d.fullTime}</td>
               </tr>
             ))}</tbody>
-          </table>}
+          </table></div>}
       </div>
     </div>
   );
@@ -1147,9 +1162,9 @@ function AuditLog({activity}){
       <div style={{background:WHITE,borderRadius:10,border:`1px solid ${GREENM}`,overflow:"hidden"}}>
         {activity.length===0?<p style={{color:"#bbb",fontSize:13,textAlign:"center",padding:"48px 0"}}>No activity yet.</p>
           :activity.map((a,i)=>(
-            <div key={i} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 18px",borderBottom:i<activity.length-1?`1px solid ${GREENL}`:"none",background:i%2===0?WHITE:GREENL}}>
+            <div key={i} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 18px",borderBottom:i<activity.length-1?`1px solid ${GREENL}`:"none",background:i%2===0?WHITE:GREENL,flexWrap:"wrap"}}>
               <div style={{width:36,height:36,borderRadius:"50%",background:colors[a.type]||GREENL,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:16,color:tColors[a.type]||NAVY2,fontWeight:700}}>{icons[a.type]||"•"}</div>
-              <div style={{flex:1}}><p style={{margin:0,fontSize:13,color:NAVY2,fontWeight:500}}>{a.message}</p><p style={{margin:0,fontSize:11,color:"#888",marginTop:2}}>{a.time}</p></div>
+              <div style={{flex:1,minWidth:150}}><p style={{margin:0,fontSize:13,color:NAVY2,fontWeight:500}}>{a.message}</p><p style={{margin:0,fontSize:11,color:"#888",marginTop:2}}>{a.time}</p></div>
               <span style={{fontSize:11,background:colors[a.type]||GREENL,color:tColors[a.type]||NAVY2,padding:"2px 10px",borderRadius:20,fontWeight:600,whiteSpace:"nowrap",textTransform:"capitalize"}}>{a.type}</span>
             </div>
           ))}
@@ -1189,14 +1204,14 @@ function AdminManagement({admins, onAdd, onRemove}){
   }
   return(
     <div style={{display:"flex",flexDirection:"column",gap:20}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:10}}>
         <div><h2 style={{fontSize:20,fontWeight:700,color:NAVY2,margin:"0 0 4px"}}>Admin Management</h2><p style={{fontSize:13,color:"#666",margin:0}}>Manage administrator accounts.</p></div>
         <button onClick={()=>setShowForm(s=>!s)} style={{background:NAVY,color:WHITE,border:"none",borderRadius:8,padding:"10px 18px",fontWeight:600,fontSize:13,cursor:"pointer"}}>{showForm?"✕ Cancel":"+ Add Admin"}</button>
       </div>
       {showForm&&(
         <div style={{background:WHITE,borderRadius:12,border:`1px solid ${GREENM}`,padding:24,display:"flex",flexDirection:"column",gap:16}}>
           <h3 style={{fontSize:15,fontWeight:700,color:NAVY2,margin:0}}>New Administrator</h3>
-          <div style={{display:"flex",gap:20,alignItems:"flex-start"}}>
+          <div className="ui-photo-row" style={{display:"flex",gap:20,alignItems:"flex-start"}}>
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,flexShrink:0}}>
               <div onClick={()=>photoRef.current.click()} style={{width:80,height:80,borderRadius:"50%",border:`2px dashed ${GREENM}`,cursor:"pointer",overflow:"hidden",background:LGRAY,display:"flex",alignItems:"center",justifyContent:"center"}}>
                 {form.photo?<img src={form.photo} alt="Admin" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:24}}>📷</span>}
@@ -1204,7 +1219,7 @@ function AdminManagement({admins, onAdd, onRemove}){
               <input ref={photoRef} type="file" accept="image/*" style={{display:"none"}} onChange={handlePhotoFile}/>
               <span style={{fontSize:10,color:"#999",textAlign:"center"}}>Profile photo<br/>(optional)</span>
             </div>
-            <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+            <div className="ui-grid-3" style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
               <Field label="Full Name *" error={errors.name}><FInput value={form.name} onChange={e=>{setForm(f=>({...f,name:e.target.value}));setErrors(x=>({...x,name:undefined}));}} placeholder="Dr. Adaobi Nwosu" hasError={!!errors.name}/></Field>
               <Field label="Username *" error={errors.username}><FInput value={form.username} onChange={e=>{setForm(f=>({...f,username:e.target.value}));setErrors(x=>({...x,username:undefined}));}} placeholder="adaobi.nwosu" hasError={!!errors.username}/></Field>
               <Field label="Password *" error={errors.password}><FInput value={form.password} onChange={e=>{setForm(f=>({...f,password:e.target.value}));setErrors(x=>({...x,password:undefined}));}} type="password" placeholder="Min 6 characters" hasError={!!errors.password}/></Field>
@@ -1219,16 +1234,16 @@ function AdminManagement({admins, onAdd, onRemove}){
         <div style={{padding:"12px 18px",background:GREENL,borderBottom:`1px solid ${GREENM}`}}>
           <p style={{fontWeight:600,color:NAVY2,fontSize:14,margin:0}}>Current Administrators ({admins.length+1})</p>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:14,padding:"16px 18px",borderBottom:`1px solid ${GREENL}`}}>
+        <div style={{display:"flex",alignItems:"center",gap:14,padding:"16px 18px",borderBottom:`1px solid ${GREENL}`,flexWrap:"wrap"}}>
           <div style={{width:42,height:42,borderRadius:"50%",background:GOLD,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:800,color:NAVY2,flexShrink:0}}>A</div>
-          <div style={{flex:1}}><p style={{margin:0,fontSize:14,fontWeight:700,color:NAVY2}}>Administrator (Built-in)</p><p style={{margin:0,fontSize:12,color:"#888"}}>@admin · Super Admin</p></div>
+          <div style={{flex:1,minWidth:150}}><p style={{margin:0,fontSize:14,fontWeight:700,color:NAVY2}}>Administrator (Built-in)</p><p style={{margin:0,fontSize:12,color:"#888"}}>@admin · Super Admin</p></div>
           <span style={{background:GOLDL,color:"#7a5c10",border:`1px solid ${GOLDM}`,borderRadius:20,fontSize:11,fontWeight:600,padding:"2px 10px"}}>🛡 Super Admin</span>
         </div>
         {admins.map((a,i)=>(
-          <div key={a.id||i} style={{display:"flex",alignItems:"center",gap:14,padding:"16px 18px",borderBottom:i<admins.length-1?`1px solid ${GREENL}`:"none",background:i%2===0?WHITE:GREENL}}>
+          <div key={a.id||i} style={{display:"flex",alignItems:"center",gap:14,padding:"16px 18px",borderBottom:i<admins.length-1?`1px solid ${GREENL}`:"none",background:i%2===0?WHITE:GREENL,flexWrap:"wrap"}}>
             {a.photo?<div style={{width:42,height:42,borderRadius:"50%",overflow:"hidden",border:`2px solid ${GOLD}`,flexShrink:0}}><img src={a.photo} alt={a.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
               :<div style={{width:42,height:42,borderRadius:"50%",background:NAVY,display:"flex",alignItems:"center",justifyContent:"center",color:GOLD,fontWeight:700,fontSize:16,flexShrink:0}}>{a.name?.[0]?.toUpperCase()||"A"}</div>}
-            <div style={{flex:1}}><p style={{margin:0,fontSize:14,fontWeight:700,color:NAVY2}}>{a.name}</p><p style={{margin:0,fontSize:12,color:"#888"}}>@{a.username}</p></div>
+            <div style={{flex:1,minWidth:150}}><p style={{margin:0,fontSize:14,fontWeight:700,color:NAVY2}}>{a.name}</p><p style={{margin:0,fontSize:12,color:"#888"}}>@{a.username}</p></div>
             <span style={{background:GREENL,color:GREEN,border:`1px solid ${GREENM}`,borderRadius:20,fontSize:11,fontWeight:600,padding:"2px 10px"}}>Admin</span>
             <button onClick={()=>onRemove(a.id)} style={{padding:"4px 10px",border:"1px solid #fecaca",borderRadius:6,background:WHITE,color:"#dc2626",cursor:"pointer",fontSize:12,fontWeight:500}}>Remove</button>
           </div>
@@ -1257,14 +1272,14 @@ function FormBuilder({fieldConfig, onUpdate}){
   }
   return(
     <div style={{display:"flex",flexDirection:"column",gap:20}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:10}}>
         <div><h2 style={{fontSize:20,fontWeight:700,color:NAVY2,margin:"0 0 4px"}}>Form Builder</h2><p style={{fontSize:13,color:"#666",margin:0}}>Control which fields appear on the registration form.</p></div>
         <button onClick={()=>setShowAdd(s=>!s)} style={{background:NAVY,color:WHITE,border:"none",borderRadius:8,padding:"10px 18px",fontWeight:600,fontSize:13,cursor:"pointer"}}>{showAdd?"✕ Cancel":"+ Add Field"}</button>
       </div>
       {showAdd&&(
         <div style={{background:WHITE,borderRadius:12,border:`1px solid ${GOLD}55`,padding:20,display:"flex",flexDirection:"column",gap:14}}>
           <h3 style={{fontSize:14,fontWeight:700,color:NAVY2,margin:0}}>New Custom Field</h3>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
+          <div className="ui-grid-3" style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
             <Field label="Field Label *"><FInput value={newField.label} onChange={e=>setNewField(f=>({...f,label:e.target.value}))} placeholder="e.g. Staff Number"/></Field>
             <Field label="Field Type"><select value={newField.type} onChange={e=>setNewField(f=>({...f,type:e.target.value}))} style={{padding:"8px 10px",border:`1.5px solid ${GREENM}`,borderRadius:6,fontSize:13,background:WHITE}}>
               <option value="text">Text</option><option value="email">Email</option><option value="tel">Phone</option><option value="date">Date</option><option value="select">Dropdown</option><option value="number">Number</option>
@@ -1273,11 +1288,11 @@ function FormBuilder({fieldConfig, onUpdate}){
               {SECTIONS.map((s,i)=><option key={i} value={i}>{s}</option>)}
             </select></Field>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+          <div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
             <Field label="Placeholder text"><FInput value={newField.placeholder||""} onChange={e=>setNewField(f=>({...f,placeholder:e.target.value}))} placeholder="e.g. Enter your staff number"/></Field>
             {newField.type==="select"&&<Field label="Options (comma-separated)"><FInput value={newField.optionsStr||""} onChange={e=>setNewField(f=>({...f,optionsStr:e.target.value}))} placeholder="Option A, Option B"/></Field>}
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:10,justifyContent:"space-between"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,justifyContent:"space-between",flexWrap:"wrap"}}>
             <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:13,color:NAVY}}>
               <input type="checkbox" checked={newField.required} onChange={e=>setNewField(f=>({...f,required:e.target.checked}))} style={{width:16,height:16}}/> Required field
             </label>
@@ -1294,9 +1309,9 @@ function FormBuilder({fieldConfig, onUpdate}){
               <p style={{fontWeight:600,color:NAVY2,fontSize:14,margin:0}}>{secName}</p>
             </div>
             {secFields.map((f,i)=>(
-              <div key={f.id} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 18px",borderBottom:i<secFields.length-1?`1px solid ${GREENL}`:"none",background:f.enabled?WHITE:"#f9fafb",opacity:f.enabled?1:0.7}}>
-                <div style={{flex:1}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <div key={f.id} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 18px",borderBottom:i<secFields.length-1?`1px solid ${GREENL}`:"none",background:f.enabled?WHITE:"#f9fafb",opacity:f.enabled?1:0.7,flexWrap:"wrap"}}>
+                <div style={{flex:1,minWidth:180}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
                     <p style={{margin:0,fontSize:13,fontWeight:600,color:f.enabled?NAVY2:"#aaa"}}>{f.label}</p>
                     {f.system&&<span style={{background:GOLDL,color:"#7a5c10",border:`1px solid ${GOLDM}`,borderRadius:20,fontSize:10,fontWeight:600,padding:"1px 8px"}}>System</span>}
                     {f.custom&&<span style={{background:"#eff6ff",color:"#1e40af",border:"1px solid #bfdbfe",borderRadius:20,fontSize:10,fontWeight:600,padding:"1px 8px"}}>Custom</span>}
@@ -1360,34 +1375,34 @@ function EditModal({member,onSave,onClose}){
           <PassportUpload value={form.passportPhoto} onChange={v=>setF("passportPhoto",v)}/>
           <div style={{fontSize:12,color:"#666"}}><p style={{margin:0,fontWeight:600,color:NAVY}}>Update passport photo</p><p style={{margin:"4px 0 0",color:"#999"}}>Click to upload a new photo</p></div>
         </div>
-        <div style={{display:"flex",borderBottom:`1px solid ${GREENM}`,background:GREENL}}>
+        <div className="ui-tabs" style={{display:"flex",borderBottom:`1px solid ${GREENM}`,background:GREENL}}>
           {SECTIONS.map((s,i)=><button key={s} onClick={()=>setSection(i)} style={{flex:1,padding:"10px 6px",fontSize:11,fontWeight:500,border:"none",borderBottom:section===i?`2px solid ${NAVY}`:"2px solid transparent",background:"transparent",cursor:"pointer",color:section===i?NAVY:"#666"}}>{s}</button>)}
         </div>
         <div style={{padding:20}}>
           {section===0&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
-            <div style={g2}><Field label="First name *" error={errors.firstName}><FInput value={form.firstName} onChange={e=>setF("firstName",e.target.value)} hasError={!!errors.firstName}/></Field><Field label="Last name *" error={errors.lastName}><FInput value={form.lastName} onChange={e=>setF("lastName",e.target.value)} hasError={!!errors.lastName}/></Field></div>
-            <div style={g3}><Field label="Date of birth"><FInput value={form.dob} onChange={e=>setF("dob",e.target.value)} type="date"/></Field><Field label="Gender"><FSelect value={form.gender} onChange={e=>setF("gender",e.target.value)} options={["Male","Female","Non-binary","Prefer not to say"]}/></Field><Field label="Nationality"><FInput value={form.nationality} onChange={e=>setF("nationality",e.target.value)}/></Field></div>
+            <div className="ui-grid-2" style={g2}><Field label="First name *" error={errors.firstName}><FInput value={form.firstName} onChange={e=>setF("firstName",e.target.value)} hasError={!!errors.firstName}/></Field><Field label="Last name *" error={errors.lastName}><FInput value={form.lastName} onChange={e=>setF("lastName",e.target.value)} hasError={!!errors.lastName}/></Field></div>
+            <div className="ui-grid-3" style={g3}><Field label="Date of birth"><FInput value={form.dob} onChange={e=>setF("dob",e.target.value)} type="date"/></Field><Field label="Gender"><FSelect value={form.gender} onChange={e=>setF("gender",e.target.value)} options={["Male","Female","Non-binary","Prefer not to say"]}/></Field><Field label="Nationality"><FInput value={form.nationality} onChange={e=>setF("nationality",e.target.value)}/></Field></div>
           </div>}
           {section===1&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
-            <div style={g2}><Field label="Email *" error={errors.email}><FInput value={form.email} onChange={e=>setF("email",e.target.value)} type="email" hasError={!!errors.email}/></Field><Field label="Phone *" error={errors.phone}><FInput value={form.phone} onChange={e=>setF("phone",e.target.value)} hasError={!!errors.phone}/></Field></div>
+            <div className="ui-grid-2" style={g2}><Field label="Email *" error={errors.email}><FInput value={form.email} onChange={e=>setF("email",e.target.value)} type="email" hasError={!!errors.email}/></Field><Field label="Phone *" error={errors.phone}><FInput value={form.phone} onChange={e=>setF("phone",e.target.value)} hasError={!!errors.phone}/></Field></div>
             <Field label="Address"><FInput value={form.address} onChange={e=>setF("address",e.target.value)}/></Field>
-            <div style={g2}><Field label="City"><FInput value={form.city} onChange={e=>setF("city",e.target.value)}/></Field><Field label="State"><FInput value={form.state} onChange={e=>setF("state",e.target.value)}/></Field></div>
+            <div className="ui-grid-2" style={g2}><Field label="City"><FInput value={form.city} onChange={e=>setF("city",e.target.value)}/></Field><Field label="State"><FInput value={form.state} onChange={e=>setF("state",e.target.value)}/></Field></div>
           </div>}
           {section===2&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
-            <div style={g2}><Field label="Job title *" error={errors.jobTitle}><FInput value={form.jobTitle} onChange={e=>setF("jobTitle",e.target.value)} hasError={!!errors.jobTitle}/></Field><Field label="Department *" error={errors.department}><FSelect value={form.department} onChange={e=>setF("department",e.target.value)} options={DEPARTMENTS} hasError={!!errors.department}/></Field></div>
-            <div style={g3}><Field label="Employment type"><FSelect value={form.employmentType} onChange={e=>setF("employmentType",e.target.value)} options={EMP_TYPES}/></Field><Field label="Start date"><FInput value={form.startDate} onChange={e=>setF("startDate",e.target.value)} type="date"/></Field><Field label="Status"><FSelect value={form.status} onChange={e=>setF("status",e.target.value)} options={STATUS_OPS}/></Field></div>
+            <div className="ui-grid-2" style={g2}><Field label="Job title *" error={errors.jobTitle}><FInput value={form.jobTitle} onChange={e=>setF("jobTitle",e.target.value)} hasError={!!errors.jobTitle}/></Field><Field label="Department *" error={errors.department}><FSelect value={form.department} onChange={e=>setF("department",e.target.value)} options={DEPARTMENTS} hasError={!!errors.department}/></Field></div>
+            <div className="ui-grid-3" style={g3}><Field label="Employment type"><FSelect value={form.employmentType} onChange={e=>setF("employmentType",e.target.value)} options={EMP_TYPES}/></Field><Field label="Start date"><FInput value={form.startDate} onChange={e=>setF("startDate",e.target.value)} type="date"/></Field><Field label="Status"><FSelect value={form.status} onChange={e=>setF("status",e.target.value)} options={STATUS_OPS}/></Field></div>
             {form.status==="On Leave"&&<div style={{background:GOLDL,border:`1px solid ${GOLDM}`,borderRadius:10,padding:16,display:"flex",flexDirection:"column",gap:14}}>
-              <div style={g2}><Field label="Type of leave *" error={errors.leaveType}><FSelect value={form.leaveType||""} onChange={e=>setF("leaveType",e.target.value)} options={LEAVE_TYPES} hasError={!!errors.leaveType}/></Field><Field label="Leave start date"><FInput value={form.leaveStartDate||""} onChange={e=>setF("leaveStartDate",e.target.value)} type="date"/></Field></div>
+              <div className="ui-grid-2" style={g2}><Field label="Type of leave *" error={errors.leaveType}><FSelect value={form.leaveType||""} onChange={e=>setF("leaveType",e.target.value)} options={LEAVE_TYPES} hasError={!!errors.leaveType}/></Field><Field label="Leave start date"><FInput value={form.leaveStartDate||""} onChange={e=>setF("leaveStartDate",e.target.value)} type="date"/></Field></div>
               <Field label="Override return date" error={errors.returnDate}><FInput value={form.returnDate||""} onChange={e=>setF("returnDate",e.target.value)} type="date" hasError={!!errors.returnDate}/></Field>
               <LeaveInfoBanner leaveType={form.leaveType} leaveStartDate={form.leaveStartDate} returnDate={form.returnDate}/>
             </div>}
           </div>}
           {section===3&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}><Field label="Contact name"><FInput value={form.emergencyName} onChange={e=>setF("emergencyName",e.target.value)}/></Field><Field label="Relationship"><FInput value={form.emergencyRelation} onChange={e=>setF("emergencyRelation",e.target.value)}/></Field></div>
+            <div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}><Field label="Contact name"><FInput value={form.emergencyName} onChange={e=>setF("emergencyName",e.target.value)}/></Field><Field label="Relationship"><FInput value={form.emergencyRelation} onChange={e=>setF("emergencyRelation",e.target.value)}/></Field></div>
             <Field label="Phone"><FInput value={form.emergencyPhone} onChange={e=>setF("emergencyPhone",e.target.value)}/></Field>
           </div>}
         </div>
-        <div style={{display:"flex",justifyContent:"space-between",padding:"14px 20px",borderTop:`1px solid ${GREENM}`,background:LGRAY}}>
+        <div style={{display:"flex",justifyContent:"space-between",padding:"14px 20px",borderTop:`1px solid ${GREENM}`,background:LGRAY,flexWrap:"wrap",gap:8}}>
           <div style={{display:"flex",gap:8}}>
             <button onClick={onClose} style={{padding:"8px 16px",border:`1px solid ${GREENM}`,borderRadius:6,background:WHITE,cursor:"pointer",color:"#555",fontSize:13}}>Cancel</button>
             {section>0&&<button onClick={()=>setSection(s=>s-1)} style={{padding:"8px 14px",border:`1px solid ${GREENM}`,borderRadius:6,background:WHITE,cursor:"pointer",color:NAVY,fontSize:13}}>← Prev</button>}
@@ -1479,6 +1494,38 @@ CREATE POLICY "Allow all activity" ON activity_log FOR ALL TO anon USING (true) 
 }
 
 // ══════════════════════════════════
+// GLOBAL RESPONSIVE STYLES
+// FIX: inline styles can't use media queries, so we inject one shared
+// stylesheet used across every screen for mobile breakpoints.
+// ══════════════════════════════════
+function GlobalResponsiveStyles(){
+  return (
+    <style>{`
+      * { box-sizing: border-box; }
+      @media (max-width: 700px) {
+        .ui-grid-2, .ui-grid-3 { grid-template-columns: 1fr !important; }
+        .ui-stats-grid { grid-template-columns: repeat(2,1fr) !important; }
+        .ui-reports-grid { grid-template-columns: 1fr !important; }
+        .ui-tabs { flex-wrap: wrap !important; }
+        .ui-tabs button { flex: 1 1 45% !important; }
+        .ui-photo-row { flex-direction: column !important; align-items: center !important; text-align: center; }
+        .ui-form-shell { padding-left: 4px; padding-right: 4px; }
+        .ui-form-actions { flex-direction: column-reverse !important; gap: 8px !important; }
+        .ui-form-actions button { width: 100%; }
+        .ui-welcome-banner { padding: 18px !important; }
+        .ui-welcome-banner > div:last-child { margin-left: 0 !important; width: 100%; }
+        .ui-leave-card { flex-direction: column !important; }
+        .ui-leave-card > div:last-child { width: 100%; }
+        .ui-leave-card button { flex: 1; }
+      }
+      @media (max-width: 480px) {
+        .ui-stats-grid { grid-template-columns: 1fr 1fr !important; }
+      }
+    `}</style>
+  );
+}
+
+// ══════════════════════════════════
 // MAIN APP
 // ══════════════════════════════════
 export default function AdminApp(){
@@ -1494,6 +1541,7 @@ export default function AdminApp(){
   const [dbError,setDbError]=useState(null);
   const [currentAdmin,setCurrentAdmin]=useState(null);
   const [fieldConfig,setFieldConfig]=useState(DEFAULT_FIELDS);
+  const [mobileNavOpen,setMobileNavOpen]=useState(false);
 
   function showToast(msg,type="success"){setToast({msg,type});setTimeout(()=>setToast(null),3500);}
 
@@ -1531,17 +1579,19 @@ export default function AdminApp(){
     setActivity(a=>[{type,message,time:t},...a]);
   }
 
-  // FIX: Proper insert with error logging
+  // FIX: Proper insert with error logging + returns a result object
+  // so the calling form knows whether the save actually worked.
   async function handleRegister(form){
     const payload = toDb(form);
     const{data,error}=await supabase.from("staff").insert(payload).select().single();
     if(error){
       console.error("Insert error:", error);
       showToast("Save failed: "+error.message,"danger");
-      return;
+      return {success:false, error:error.message};
     }
     setStaff(s=>[fromDb(data),...s]);
     await logActivity("register",`New registration: ${form.firstName} ${form.lastName} (${form.employeeId||genId(form.firstName,form.lastName,form.startDate)})`);
+    return {success:true};
   }
 
   async function handleEdit(form){
@@ -1561,6 +1611,7 @@ export default function AdminApp(){
     showToast("Record deleted.","danger");
   }
 
+  // FIX: also returns a result object, mirroring handleRegister
   async function handleLeaveRequest(form){
     const{data,error}=await supabase.from("leave_requests").insert({
       employee_id:form.employeeId,
@@ -1572,8 +1623,12 @@ export default function AdminApp(){
       reason:form.reason,
       status:"Pending",
     }).select().single();
-    if(error){console.error("Leave request error:",error); return;}
+    if(error){
+      console.error("Leave request error:",error);
+      return {success:false, error:error.message};
+    }
     setLeaveRequests(r=>[leaveReqFromDb(data),...r]);
+    return {success:true};
   }
 
   async function handleApproveLeave(id, adminNote){
@@ -1642,30 +1697,54 @@ export default function AdminApp(){
     {key:"formbuilder",label:"Form Builder",icon:"⚙️"},
   ];
 
-  if(screen==="role") return <RoleSelect onSelectRole={r=>{
+  if(screen==="role") return <><GlobalResponsiveStyles/><RoleSelect onSelectRole={r=>{
     if(r==="staff") setScreen("staff-form");
     else if(r==="leave-request") setScreen("leave-request");
     else setScreen("admin-login");
-  }}/>;
-  if(screen==="staff-form") return <StaffRegistration onSubmit={handleRegister} onBack={()=>setScreen("role")} fieldConfig={fieldConfig}/>;
-  if(screen==="leave-request") return <LeaveRequestForm onBack={()=>setScreen("role")} onSubmit={handleLeaveRequest}/>;
-  if(screen==="admin-login") return <AdminLogin onLogin={a=>{setCurrentAdmin(a);setScreen("admin");}} onBack={()=>setScreen("role")} admins={admins}/>;
-  if(dbError) return <SetupGuide error={dbError}/>;
+  }}/></>;
+  if(screen==="staff-form") return <><GlobalResponsiveStyles/><StaffRegistration onSubmit={handleRegister} onBack={()=>setScreen("role")} fieldConfig={fieldConfig}/></>;
+  if(screen==="leave-request") return <><GlobalResponsiveStyles/><LeaveRequestForm onBack={()=>setScreen("role")} onSubmit={handleLeaveRequest}/></>;
+  if(screen==="admin-login") return <><GlobalResponsiveStyles/><AdminLogin onLogin={a=>{setCurrentAdmin(a);setScreen("admin");}} onBack={()=>setScreen("role")} admins={admins}/></>;
+  if(dbError) return <><GlobalResponsiveStyles/><SetupGuide error={dbError}/></>;
 
   return(
     <div style={{display:"flex",minHeight:"100vh",fontFamily:"system-ui,sans-serif",background:LGRAY}}>
+      <GlobalResponsiveStyles/>
+      <style>{`
+        .ui-sidebar { width:225px; }
+        .ui-sidebar-overlay { display:none; }
+        .ui-hamburger { display:none; }
+        @media (max-width: 900px) {
+          .ui-sidebar {
+            position: fixed; top:0; left:0; bottom:0; z-index: 250;
+            width: 240px;
+            transform: translateX(${mobileNavOpen?"0":"-100%"});
+            transition: transform 0.22s ease;
+            box-shadow: ${mobileNavOpen?"4px 0 24px rgba(0,0,0,0.3)":"none"};
+          }
+          .ui-sidebar-overlay {
+            display: ${mobileNavOpen?"block":"none"};
+            position: fixed; inset:0; background: rgba(0,0,0,0.4); z-index:240;
+          }
+          .ui-hamburger { display: flex !important; }
+          .ui-main-content { padding: 16px !important; }
+          .ui-topbar-title { font-size: 13px !important; }
+        }
+      `}</style>
+
       {/* Sidebar */}
-      <div style={{width:225,background:NAVY2,display:"flex",flexDirection:"column",flexShrink:0}}>
+      <div className="ui-sidebar" style={{background:NAVY2,display:"flex",flexDirection:"column",flexShrink:0}}>
         <div style={{padding:"16px",borderBottom:"1px solid rgba(255,255,255,0.08)",display:"flex",alignItems:"center",gap:10}}>
           <img src="https://upload.wikimedia.org/wikipedia/en/8/8a/University_of_Ibadan_logo.png" alt="UI" style={{height:40,width:40,objectFit:"contain",flexShrink:0}} onError={e=>{e.currentTarget.style.display="none";}}/>
-          <div>
+          <div style={{flex:1,minWidth:0}}>
             <p style={{color:WHITE,fontWeight:700,fontSize:12,margin:0,lineHeight:1.2}}>University of Ibadan</p>
             <p style={{color:GOLD,fontSize:10,margin:"2px 0 0",fontWeight:600}}>Admin Portal</p>
           </div>
+          <button className="ui-hamburger" onClick={()=>setMobileNavOpen(false)} style={{display:"none",background:"rgba(255,255,255,0.1)",border:"none",color:WHITE,width:28,height:28,borderRadius:6,cursor:"pointer",fontSize:16,alignItems:"center",justifyContent:"center",flexShrink:0}}>×</button>
         </div>
-        <nav style={{padding:"12px 10px",flex:1}}>
+        <nav style={{padding:"12px 10px",flex:1,overflowY:"auto"}}>
           {navItems.map(n=>(
-            <button key={n.key} onClick={()=>setPage(n.key)} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"10px 12px",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontWeight:500,textAlign:"left",marginBottom:2,background:page===n.key?"rgba(201,168,76,0.18)":"transparent",color:page===n.key?GOLD:"rgba(255,255,255,0.7)",borderLeft:page===n.key?`3px solid ${GOLD}`:"3px solid transparent",position:"relative"}}>
+            <button key={n.key} onClick={()=>{setPage(n.key);setMobileNavOpen(false);}} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"10px 12px",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontWeight:500,textAlign:"left",marginBottom:2,background:page===n.key?"rgba(201,168,76,0.18)":"transparent",color:page===n.key?GOLD:"rgba(255,255,255,0.7)",borderLeft:page===n.key?`3px solid ${GOLD}`:"3px solid transparent",position:"relative"}}>
               <span style={{fontSize:16}}>{n.icon}</span>
               {n.label}
               {n.badge>0&&<span style={{marginLeft:"auto",background:"#dc2626",color:WHITE,borderRadius:20,fontSize:10,fontWeight:700,padding:"1px 7px",minWidth:18,textAlign:"center"}}>{n.badge}</span>}
@@ -1683,25 +1762,27 @@ export default function AdminApp(){
           </div>
         </div>
       </div>
+      <div className="ui-sidebar-overlay" onClick={()=>setMobileNavOpen(false)}/>
 
       {/* Main content */}
       <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0}}>
-        <div style={{background:NAVY,borderBottom:`2px solid ${GOLD}`,padding:"0 28px",display:"flex",justifyContent:"space-between",alignItems:"center",height:56}}>
-          <div style={{display:"flex",alignItems:"center",gap:12}}>
-            <p style={{fontWeight:700,color:WHITE,fontSize:15,margin:0}}>{navItems.find(n=>n.key===page)?.label}</p>
-            {loading&&<span style={{fontSize:11,color:GOLD,background:"rgba(201,168,76,0.15)",padding:"2px 10px",borderRadius:20}}>Syncing…</span>}
-            <button onClick={fetchAll} style={{fontSize:11,color:"rgba(255,255,255,0.6)",background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:6,padding:"3px 10px",cursor:"pointer"}}>↻ Refresh</button>
+        <div style={{background:NAVY,borderBottom:`2px solid ${GOLD}`,padding:"0 16px",display:"flex",justifyContent:"space-between",alignItems:"center",height:56,gap:10}}>
+          <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>
+            <button className="ui-hamburger" onClick={()=>setMobileNavOpen(true)} style={{display:"none",background:"rgba(255,255,255,0.1)",border:"none",color:WHITE,width:32,height:32,borderRadius:6,cursor:"pointer",fontSize:16,alignItems:"center",justifyContent:"center",flexShrink:0}}>☰</button>
+            <p className="ui-topbar-title" style={{fontWeight:700,color:WHITE,fontSize:15,margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{navItems.find(n=>n.key===page)?.label}</p>
+            {loading&&<span style={{fontSize:11,color:GOLD,background:"rgba(201,168,76,0.15)",padding:"2px 10px",borderRadius:20,flexShrink:0}}>Syncing…</span>}
+            <button onClick={fetchAll} style={{fontSize:11,color:"rgba(255,255,255,0.6)",background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:6,padding:"3px 10px",cursor:"pointer",flexShrink:0}}>↻ Refresh</button>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
             {currentAdmin?.photo
               ?<div style={{width:34,height:34,borderRadius:"50%",overflow:"hidden",border:`2px solid ${GOLD}`}}><img src={currentAdmin.photo} alt="admin" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
               :<div style={{width:34,height:34,borderRadius:"50%",background:GOLD,display:"flex",alignItems:"center",justifyContent:"center",color:NAVY2,fontWeight:800,fontSize:15}}>{currentAdmin?.username?.[0]?.toUpperCase()||"A"}</div>
             }
-            <div><p style={{margin:0,fontSize:13,fontWeight:600,color:WHITE}}>{currentAdmin?.name||currentAdmin?.username||"Admin"}</p><p style={{margin:0,fontSize:10,color:"rgba(255,255,255,0.5)"}}>{currentAdmin?.role==="super"?"Super Admin":"Administrator"}</p></div>
+            <div style={{display:"none"}} className="ui-admin-name"><p style={{margin:0,fontSize:13,fontWeight:600,color:WHITE}}>{currentAdmin?.name||currentAdmin?.username||"Admin"}</p><p style={{margin:0,fontSize:10,color:"rgba(255,255,255,0.5)"}}>{currentAdmin?.role==="super"?"Super Admin":"Administrator"}</p></div>
           </div>
         </div>
 
-        <div style={{flex:1,padding:28,overflowY:"auto"}}>
+        <div className="ui-main-content" style={{flex:1,padding:28,overflowY:"auto"}}>
           {page==="dashboard"&&<DashboardHome staff={staff} activity={activity} currentAdmin={currentAdmin} pendingLeaveCount={pendingLeaveCount}/>}
           {page==="staff"&&<StaffDirectory staff={staff} onEdit={m=>setEditTarget(m)} onDelete={handleDelete}/>}
           {page==="leave-requests"&&<LeaveRequestsAdmin requests={leaveRequests} onApprove={handleApproveLeave} onReject={handleRejectLeave} onRefresh={fetchAll}/>}
@@ -1715,7 +1796,7 @@ export default function AdminApp(){
       {editTarget&&<EditModal member={editTarget} onSave={handleEdit} onClose={()=>setEditTarget(null)}/>}
 
       {toast&&(
-        <div style={{position:"fixed",bottom:24,right:24,zIndex:300,background:toast.type==="danger"?"#fef2f2":GREENL,color:toast.type==="danger"?"#991b1b":NAVY2,border:`1px solid ${toast.type==="danger"?"#fecaca":GREENM}`,padding:"12px 18px",borderRadius:8,fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:8,boxShadow:"0 4px 20px rgba(0,0,0,0.15)"}}>
+        <div style={{position:"fixed",bottom:24,right:24,left:24,zIndex:300,background:toast.type==="danger"?"#fef2f2":GREENL,color:toast.type==="danger"?"#991b1b":NAVY2,border:`1px solid ${toast.type==="danger"?"#fecaca":GREENM}`,padding:"12px 18px",borderRadius:8,fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:8,boxShadow:"0 4px 20px rgba(0,0,0,0.15)",maxWidth:420,marginLeft:"auto"}}>
           {toast.type==="danger"?"🗑":"✓"} {toast.msg}
         </div>
       )}
