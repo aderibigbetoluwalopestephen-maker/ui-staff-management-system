@@ -31,15 +31,15 @@ const STATUS_OPS  = ["Active","On Leave","Probation","Terminated"];
 const EMP_TYPES   = ["Full-time","Part-time","Contract","Intern"];
 
 const LEAVE_CONFIGS = {
-  "Maternity Leave":     { days:90,  label:"3 months", icon:"🤱" },
-  "Paternity Leave":     { days:14,  label:"2 weeks",  icon:"👨‍👶" },
-  "Annual Leave":        { days:21,  label:"3 weeks",  icon:"🌴" },
-  "Sick Leave":          { days:14,  label:"2 weeks",  icon:"🏥" },
-  "Study Leave":         { days:180, label:"6 months", icon:"📚" },
-  "Compassionate Leave": { days:7,   label:"1 week",   icon:"💛" },
-  "Sabbatical Leave":    { days:365, label:"1 year",   icon:"✈️" },
-  "Unpaid Leave":        { days:30,  label:"1 month",  icon:"📋" },
-  "Other":               { days:30,  label:"30 days",  icon:"📝" },
+  "Maternity Leave":     { days:90,  label:"3 months", icon:"" },
+  "Paternity Leave":     { days:14,  label:"2 weeks",  icon:"" },
+  "Annual Leave":        { days:21,  label:"3 weeks",  icon:"" },
+  "Sick Leave":          { days:14,  label:"2 weeks",  icon:"" },
+  "Study Leave":         { days:180, label:"6 months", icon:"" },
+  "Compassionate Leave": { days:7,   label:"1 week",   icon:"" },
+  "Sabbatical Leave":    { days:365, label:"1 year",   icon:"" },
+  "Unpaid Leave":        { days:30,  label:"1 month",  icon:"" },
+  "Other":               { days:30,  label:"30 days",  icon:"" },
 };
 const LEAVE_TYPES = Object.keys(LEAVE_CONFIGS);
 const ADMIN_CREDS = { username:"admin", password:"ui2024" };
@@ -132,6 +132,8 @@ function toDb(form) {
     nationality: form.nationality||null,
     email: form.email||"",
     phone: form.phone||"",
+    staff_email: form.staffEmail||null,
+    alternate_email: form.alternateEmail||null,
     address: form.address||null,
     city: form.city||null,
     state: form.state||null,
@@ -139,6 +141,8 @@ function toDb(form) {
     department: form.department||"",
     employment_type: form.employmentType||null,
     start_date: form.startDate||null,
+    assumption_date: form.assumptionDate||null,
+    pf_number: form.pfNumber||null,
     status: form.status||"Active",
     employee_id: form.employeeId||"",
     passport_photo: form.passportPhoto||null,
@@ -162,9 +166,11 @@ function fromDb(row) {
     firstName: row.first_name||"", lastName: row.last_name||"",
     dob: row.dob||"", gender: row.gender||"", nationality: row.nationality||"",
     email: row.email||"", phone: row.phone||"",
+    staffEmail: row.staff_email||"", alternateEmail: row.alternate_email||"",
     address: row.address||"", city: row.city||"", state: row.state||"",
     jobTitle: row.job_title||"", department: row.department||"",
     employmentType: row.employment_type||"", startDate: row.start_date||"",
+    assumptionDate: row.assumption_date||"", pfNumber: row.pf_number||"",
     status: row.status||"Active", employeeId: row.employee_id||"",
     passportPhoto: row.passport_photo||"",
     leaveType: row.leave_type||"", returnDate: row.return_date||"",
@@ -296,7 +302,7 @@ function UIHeader({rightContent}){
           <img
             src="https://www.bing.com/th/id/OIP.B6Ay7P-bfic37pK32qd1yQAAAA?w=178&h=211&c=8&rs=1&qlt=90&o=6&pid=3.1&rm=2"
             alt="UI logo"
-            style={{height:50,width:50,objectFit:"contain",flexShrink:0}}
+            style={{height:30,width:30,objectFit:"contain",flexShrink:0}}
             onError={e=>{
               // Fallback crest if image fails
               e.currentTarget.style.display="none";
@@ -307,9 +313,9 @@ function UIHeader({rightContent}){
           <div style={{display:"none",width:50,height:50,borderRadius:"50%",background:GOLD,alignItems:"center",justifyContent:"center",fontWeight:900,color:NAVY2,fontSize:18,flexShrink:0}}>UI</div>
           {/* Text beside logo */}
           <div style={{lineHeight:1.2}}>
-            <div style={{color:GOLD,fontSize:10,fontWeight:600,letterSpacing:2,textTransform:"uppercase"}}>University of</div>
-            <div style={{color:WHITE,fontSize:22,fontWeight:800,letterSpacing:1}}>IBADAN</div>
-            <div style={{color:"rgba(255,255,255,0.45)",fontSize:9,letterSpacing:1.5,textTransform:"uppercase"}}>Staff Management System</div>
+            <div style={{color:GOLD,fontSize:10,fontWeight:600,letterSpacing:2,textTransform:"uppercase"}}>STAFF</div>
+            <div style={{color:WHITE,fontSize:22,fontWeight:800,letterSpacing:1}}>DATA</div>
+            <div style={{color:"rgba(255,255,255,0.45)",fontSize:9,letterSpacing:1.5,textTransform:"uppercase"}}></div>
           </div>
         </div>
         <div>{rightContent}</div>
@@ -318,9 +324,9 @@ function UIHeader({rightContent}){
   );
 }
 
-// ══════════════════════════════════
+
 // LEAVE COMPONENTS
-// ══════════════════════════════════
+
 function LeaveCountdownPill({returnDate}){
   const cd=getLeaveCountdown(returnDate);
   if(!cd) return <span style={{color:"#bbb",fontSize:11}}>—</span>;
@@ -411,15 +417,15 @@ function RoleSelect({onSelectRole}){
         <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:18,marginBottom:16}}>
           <img src="https://upload.wikimedia.org/wikipedia/en/8/8a/University_of_Ibadan_logo.png" alt="UI" style={{height:80,width:80,objectFit:"contain"}} onError={e=>{e.currentTarget.style.display="none";}}/>
           <div style={{textAlign:"left"}}>
-            <div style={{color:GOLD,fontSize:11,letterSpacing:4,fontWeight:600}}>UNIVERSITY OF</div>
-            <div style={{color:WHITE,fontSize:38,fontWeight:900,letterSpacing:2,lineHeight:1}}>IBADAN</div>
+            <div style={{color:GOLD,fontSize:11,letterSpacing:4,fontWeight:600}}>UNIVERSITY OF IBADAN</div>
+            <div style={{color:WHITE,fontSize:38,fontWeight:900,letterSpacing:2,lineHeight:1}}>Staff Data</div>
             <div style={{color:"rgba(255,255,255,0.5)",fontSize:10,letterSpacing:2}}>STAFF MANAGEMENT SYSTEM</div>
           </div>
         </div>
         <p style={{color:"rgba(255,255,255,0.7)",fontSize:15,margin:"0 0 40px"}}>Register staff, submit leave requests, and manage university personnel</p>
         <div style={{display:"flex",gap:14,justifyContent:"center",flexWrap:"wrap"}}>
           <button onClick={()=>onSelectRole("staff")} style={{background:GOLD,color:NAVY2,border:"none",borderRadius:6,padding:"14px 36px",fontWeight:800,fontSize:15,cursor:"pointer",letterSpacing:0.5,boxShadow:"0 4px 20px rgba(201,168,76,0.4)"}}>
-            👥 Staff Registration
+             Staff Registration
           </button>
           <button onClick={()=>onSelectRole("leave-request")} style={{background:"transparent",color:GOLD,border:`2px solid ${GOLD}`,borderRadius:6,padding:"14px 36px",fontWeight:800,fontSize:15,cursor:"pointer",letterSpacing:0.5}}>
              Submit Leave Request
@@ -445,7 +451,7 @@ function RoleSelect({onSelectRole}){
 
 // LEAVE REQUEST FORM (Staff-facing)
 
-function LeaveRequestForm({onBack, onSubmit}){
+function LeaveRequestForm({onBack, onSubmit, departments}){
   const [form, setForm] = useState({
     employeeId:"", staffName:"", department:"", leaveType:"",
     startDate:"", endDate:"", reason:""
@@ -534,14 +540,14 @@ function LeaveRequestForm({onBack, onSubmit}){
               </div>
               <div style={{marginTop:14}}>
                 <Field label="Department *" error={errors.department}>
-                  <FSelect value={form.department} onChange={e=>setF("department",e.target.value)} options={DEPARTMENTS} hasError={!!errors.department}/>
+                  <FSelect value={form.department} onChange={e=>setF("department",e.target.value)} options={departments} hasError={!!errors.department}/>
                 </Field>
               </div>
             </div>
 
             {/* Leave details */}
             <div style={{background:GOLDL,borderRadius:10,padding:16,border:`1px solid ${GOLDM}`}}>
-              <p style={{fontWeight:700,color:"#7a5c10",fontSize:13,margin:"0 0 14px"}}>🏖️ Leave Details</p>
+              <p style={{fontWeight:700,color:"#7a5c10",fontSize:13,margin:"0 0 14px"}}> Leave Details</p>
               <Field label="Type of Leave *" error={errors.leaveType}>
                 <FSelect value={form.leaveType} onChange={e=>setF("leaveType",e.target.value)} options={LEAVE_TYPES} hasError={!!errors.leaveType}/>
               </Field>
@@ -564,7 +570,7 @@ function LeaveRequestForm({onBack, onSubmit}){
               </div>
               {form.startDate&&form.endDate&&form.endDate>=form.startDate&&(
                 <div style={{marginTop:10,background:"rgba(255,255,255,0.6)",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#7a5c10",fontWeight:600}}>
-                  📅 Duration: {Math.ceil((new Date(form.endDate)-new Date(form.startDate))/(1000*60*60*24))+1} day(s)
+                  Duration: {Math.ceil((new Date(form.endDate)-new Date(form.startDate))/(1000*60*60*24))+1} day(s)
                 </div>
               )}
             </div>
@@ -575,7 +581,7 @@ function LeaveRequestForm({onBack, onSubmit}){
             </Field>
 
             <div style={{background:GREENL,border:`1px solid ${GREENM}`,borderRadius:8,padding:"10px 14px",fontSize:12,color:NAVY}}>
-              ℹ️ Your request will be reviewed by the admin. You will be notified of approval or rejection.
+               Your request will be reviewed by the admin. You will be notified of approval or rejection.
             </div>
           </div>
           <div className="ui-form-actions" style={{display:"flex",justifyContent:"space-between",padding:"14px 24px",borderTop:`1px solid ${GREENM}`,background:LGRAY}}>
@@ -640,7 +646,7 @@ function AdminLogin({onLogin,onBack,admins=[]}){
 
 // STAFF REGISTRATION
 
-function StaffRegistration({onSubmit,onBack,fieldConfig}){
+function StaffRegistration({onSubmit,onBack,fieldConfig,departments}){
   const enabledFields = fieldConfig.filter(f=>f.enabled);
   const [form,setForm]=useState({passportPhoto:""});
   const [section,setSection]=useState(0);
@@ -672,6 +678,8 @@ function StaffRegistration({onSubmit,onBack,fieldConfig}){
       if(!form[f.id]?.toString().trim())e[f.id]=`${f.label} is required`;
     });
     if(form.email&&!/\S+@\S+\.\S+/.test(form.email))e.email="Invalid email";
+    if(form.staffEmail&&!/\S+@\S+\.\S+/.test(form.staffEmail))e.staffEmail="Invalid email";
+    if(form.alternateEmail&&!/\S+@\S+\.\S+/.test(form.alternateEmail))e.alternateEmail="Invalid email";
     const statusField = enabledFields.find(f=>f.id==="status");
     if(statusField&&form.status==="On Leave"){
       if(!form.leaveType)e.leaveType="Please specify leave type";
@@ -708,7 +716,10 @@ function StaffRegistration({onSubmit,onBack,fieldConfig}){
   const customSectionFields=(sec)=>fieldConfig.filter(f=>f.custom&&f.enabled&&f.section===sec);
 
   function renderField(f){
-    if(f.id==="gender"||f.id==="employmentType"||f.id==="department"){
+    if(f.id==="department"){
+      return <Field key={f.id} label={`${f.label}${f.required?" *":""}`} error={errors[f.id]}><FSelect value={form[f.id]||""} onChange={e=>setF(f.id,e.target.value)} options={departments} hasError={!!errors[f.id]}/></Field>;
+    }
+    if(f.id==="gender"||f.id==="employmentType"){
       return <Field key={f.id} label={`${f.label}${f.required?" *":""}`} error={errors[f.id]}><FSelect value={form[f.id]||""} onChange={e=>setF(f.id,e.target.value)} options={f.options||[]} hasError={!!errors[f.id]}/></Field>;
     }
     return <Field key={f.id} label={`${f.label}${f.required?" *":""}`} error={errors[f.id]}>
@@ -780,6 +791,14 @@ function StaffRegistration({onSubmit,onBack,fieldConfig}){
                 <div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                   {sectionFields(1).filter(f=>["email","phone"].includes(f.id)).map(renderField)}
                 </div>
+                <div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                  <Field label="Staff Dedicated Mail" error={errors.staffEmail}>
+                    <FInput value={form.staffEmail||""} onChange={e=>setF("staffEmail",e.target.value)} type="email" placeholder="e.g. j.doe@ui.edu.ng" hasError={!!errors.staffEmail}/>
+                  </Field>
+                  <Field label="Alternate Mail" error={errors.alternateEmail}>
+                    <FInput value={form.alternateEmail||""} onChange={e=>setF("alternateEmail",e.target.value)} type="email" placeholder="Optional alternate address" hasError={!!errors.alternateEmail}/>
+                  </Field>
+                </div>
                 {sectionFields(1).filter(f=>f.id==="address").map(renderField)}
                 <div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
                   {sectionFields(1).filter(f=>["city","state"].includes(f.id)).map(renderField)}
@@ -795,6 +814,14 @@ function StaffRegistration({onSubmit,onBack,fieldConfig}){
                 <div className="ui-grid-3" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
                   {sectionFields(2).filter(f=>["employmentType","startDate"].includes(f.id)).map(renderField)}
                   {statusField&&<Field label="Status"><FSelect value={form.status||"Active"} onChange={e=>setF("status",e.target.value)} options={STATUS_OPS}/></Field>}
+                </div>
+                <div className="ui-grid-3" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
+                  <Field label="Assumption of Duty Date">
+                    <FInput value={form.assumptionDate||""} onChange={e=>setF("assumptionDate",e.target.value)} type="date"/>
+                  </Field>
+                  <Field label="PF Number">
+                    <FInput value={form.pfNumber||""} onChange={e=>setF("pfNumber",e.target.value)} placeholder="e.g. PF/UI/00123"/>
+                  </Field>
                 </div>
                 {statusField&&form.status==="On Leave"&&(
                   <div style={{background:GOLDL,border:`1px solid ${GOLDM}`,borderRadius:10,padding:16,display:"flex",flexDirection:"column",gap:14}}>
@@ -976,12 +1003,12 @@ function LeaveRequestsAdmin({requests, onApprove, onReject, onRefresh}){
 // DASHBOARD HOME
 // ══════════════════════════════════
 const PIE_COLORS=["#0a1f5c","#C9A84C","#0891b2","#7c3aed","#dc2626","#059669","#d97706","#db2777"];
-function DashboardHome({staff,activity,currentAdmin,pendingLeaveCount}){
+function DashboardHome({staff,activity,currentAdmin,pendingLeaveCount,departments}){
   const total=staff.length, active=staff.filter(s=>s.status==="Active").length;
   const onLeave=staff.filter(s=>s.status==="On Leave").length;
   const fullTime=staff.filter(s=>s.employmentType==="Full-time").length;
   const statusData=STATUS_OPS.map(s=>({name:s,value:staff.filter(m=>m.status===s).length})).filter(d=>d.value>0);
-  const deptPieData=DEPARTMENTS.map(d=>({name:d,value:staff.filter(s=>s.department===d).length})).filter(d=>d.value>0);
+  const deptPieData=departments.map(d=>({name:d,value:staff.filter(s=>s.department===d).length})).filter(d=>d.value>0);
   const stats=[
     {label:"Total Staff",value:total,sub:"All records",color:NAVY},
     {label:"Active",value:active,sub:`${total?Math.round(active/total*100):0}% of total`,color:GREEN},
@@ -992,14 +1019,11 @@ function DashboardHome({staff,activity,currentAdmin,pendingLeaveCount}){
   return(
     <div style={{display:"flex",flexDirection:"column",gap:24}}>
       <div className="ui-welcome-banner" style={{background:`linear-gradient(135deg,${NAVY2},${NAVYL})`,borderRadius:14,padding:"24px 28px",display:"flex",alignItems:"center",gap:20,border:`1px solid ${GOLD}33`,flexWrap:"wrap"}}>
-        {currentAdmin?.photo
-          ?<div style={{width:64,height:64,borderRadius:"50%",overflow:"hidden",border:`3px solid ${GOLD}`,flexShrink:0}}><img src={currentAdmin.photo} alt="Admin" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
-          :<div style={{width:64,height:64,borderRadius:"50%",background:GOLD,display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,fontWeight:800,color:NAVY2,flexShrink:0,border:`3px solid ${GOLD}55`}}>{currentAdmin?.username?.[0]?.toUpperCase()||"A"}</div>
-        }
+        <AdminAvatar admin={currentAdmin} size={64}/>
         <div>
           <p style={{color:GOLD,fontSize:11,fontWeight:600,letterSpacing:2,textTransform:"uppercase",margin:"0 0 4px"}}>Welcome back</p>
           <h2 style={{color:WHITE,fontSize:22,fontWeight:800,margin:"0 0 4px"}}>{currentAdmin?.name||currentAdmin?.username||"Administrator"}</h2>
-          <p style={{color:"rgba(255,255,255,0.6)",fontSize:13,margin:0}}>{currentAdmin?.role==="super"?"Super Admin":"Admin"} · University of Ibadan Staff System</p>
+          <p style={{color:"rgba(255,255,255,0.6)",fontSize:13,margin:0}}>{currentAdmin?.role==="super"?"Super Admin":"Admin"} · Staff Data</p>
         </div>
         {pendingLeaveCount>0&&<div style={{marginLeft:"auto",background:"#dc2626",color:WHITE,borderRadius:10,padding:"12px 18px",textAlign:"center",flexShrink:0}}>
           <p style={{margin:0,fontSize:22,fontWeight:800,lineHeight:1}}>{pendingLeaveCount}</p>
@@ -1046,7 +1070,7 @@ function DashboardHome({staff,activity,currentAdmin,pendingLeaveCount}){
 // ══════════════════════════════════
 // STAFF DIRECTORY
 // ══════════════════════════════════
-function StaffDirectory({staff,onEdit,onDelete}){
+function StaffDirectory({staff,onEdit,onDelete,onView,departments}){
   const [search,setSearch]=useState(""); const [sort,setSort]=useState("lastName");
   const [filterDept,setFilterDept]=useState(""); const [filterStatus,setFilterStatus]=useState("");
   const filtered=staff.filter(m=>{
@@ -1060,7 +1084,7 @@ function StaffDirectory({staff,onEdit,onDelete}){
       <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
         <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search name, email, ID…" style={{flex:1,minWidth:180,padding:"8px 12px",border:`1px solid ${GREENM}`,borderRadius:6,fontSize:13,outline:"none"}}/>
         <select value={filterDept} onChange={e=>setFilterDept(e.target.value)} style={{padding:"8px 10px",border:`1px solid ${GREENM}`,borderRadius:6,fontSize:13,background:WHITE}}>
-          <option value="">All departments</option>{DEPARTMENTS.map(d=><option key={d} value={d}>{d}</option>)}
+          <option value="">All departments</option>{departments.map(d=><option key={d} value={d}>{d}</option>)}
         </select>
         <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} style={{padding:"8px 10px",border:`1px solid ${GREENM}`,borderRadius:6,fontSize:13,background:WHITE}}>
           <option value="">All statuses</option>{STATUS_OPS.map(s=><option key={s} value={s}>{s}</option>)}
@@ -1078,9 +1102,9 @@ function StaffDirectory({staff,onEdit,onDelete}){
               <tbody>{filtered.map((m,i)=>(
                 <tr key={m.id} style={{background:i%2===0?WHITE:GREENL,fontSize:13}}>
                   <td style={{padding:"12px 14px",borderBottom:`1px solid ${GREENM}`}}>
-                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>onView(m)}>
                       <Avatar name={`${m.firstName} ${m.lastName}`} photo={m.passportPhoto} size={36}/>
-                      <div><p style={{fontWeight:600,margin:0,color:NAVY2}}>{m.firstName} {m.lastName}</p><p style={{fontSize:11,color:NAVY,margin:0,fontWeight:700,letterSpacing:0.5}}>{m.employeeId}</p></div>
+                      <div><p style={{fontWeight:600,margin:0,color:NAVY}}>{m.firstName} {m.lastName}</p><p style={{fontSize:11,color:NAVY,margin:0,fontWeight:700,letterSpacing:0.5}}>{m.employeeId}</p></div>
                     </div>
                   </td>
                   <td style={{padding:"12px 14px",borderBottom:`1px solid ${GREENM}`,color:"#555"}}>{m.department||"—"}</td>
@@ -1091,6 +1115,7 @@ function StaffDirectory({staff,onEdit,onDelete}){
                   <td style={{padding:"12px 14px",borderBottom:`1px solid ${GREENM}`}}>{m.status==="On Leave"?<LeaveCountdownPill returnDate={m.returnDate}/>:<span style={{color:"#ccc",fontSize:12}}>—</span>}</td>
                   <td style={{padding:"12px 14px",borderBottom:`1px solid ${GREENM}`}}>
                     <div style={{display:"flex",gap:6}}>
+                      <button onClick={()=>onView(m)} style={{padding:"4px 10px",border:`1px solid ${GREENM}`,borderRadius:5,background:WHITE,color:NAVY,cursor:"pointer",fontSize:12}}>View</button>
                       <button onClick={()=>onEdit(m)} style={{padding:"4px 10px",border:`1px solid ${GREENM}`,borderRadius:5,background:WHITE,color:NAVY,cursor:"pointer",fontSize:12}}>Edit</button>
                       <button onClick={()=>onDelete(m.id)} style={{padding:"4px 10px",border:"1px solid #fecaca",borderRadius:5,background:WHITE,color:"#dc2626",cursor:"pointer",fontSize:12}}>Delete</button>
                     </div>
@@ -1109,14 +1134,14 @@ function StaffDirectory({staff,onEdit,onDelete}){
 // ══════════════════════════════════
 // REPORTS
 // ══════════════════════════════════
-function ReportsPage({staff}){
+function ReportsPage({staff,departments}){
   function exportCSV(rows,filename){
-    const headers=["Employee ID","First Name","Last Name","Email","Phone","Department","Job Title","Status","Leave Type","Leave Start","Return Date","Start Date","Employment Type","Gender"];
-    const csv=[headers,...rows.map(s=>[s.employeeId,s.firstName,s.lastName,s.email,s.phone,s.department,s.jobTitle,s.status,s.leaveType||"",s.leaveStartDate||"",s.returnDate||"",s.startDate,s.employmentType,s.gender])].map(r=>r.map(c=>`"${c||""}"`).join(",")).join("\n");
+    const headers=["Employee ID","First Name","Last Name","Email","Staff Mail","Alternate Mail","Phone","Department","Job Title","Status","PF Number","Assumption Date","Leave Type","Leave Start","Return Date","Start Date","Employment Type","Gender"];
+    const csv=[headers,...rows.map(s=>[s.employeeId,s.firstName,s.lastName,s.email,s.staffEmail||"",s.alternateEmail||"",s.phone,s.department,s.jobTitle,s.status,s.pfNumber||"",s.assumptionDate||"",s.leaveType||"",s.leaveStartDate||"",s.returnDate||"",s.startDate,s.employmentType,s.gender])].map(r=>r.map(c=>`"${c||""}"`).join(",")).join("\n");
     const a=document.createElement("a"); a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv); a.download=filename; a.click();
   }
   const reports=[{title:"All Staff",data:staff,desc:"Complete directory",file:"all_staff.csv"},{title:"Active Staff",data:staff.filter(s=>s.status==="Active"),desc:"Currently active",file:"active_staff.csv"},{title:"Full-time Staff",data:staff.filter(s=>s.employmentType==="Full-time"),desc:"Permanent employees",file:"fulltime.csv"},{title:"On Leave",data:staff.filter(s=>s.status==="On Leave"),desc:"Currently on leave",file:"on_leave.csv"}];
-  const deptSummary=DEPARTMENTS.map(d=>({dept:d,total:staff.filter(s=>s.department===d).length,active:staff.filter(s=>s.department===d&&s.status==="Active").length,onLeave:staff.filter(s=>s.department===d&&s.status==="On Leave").length,fullTime:staff.filter(s=>s.department===d&&s.employmentType==="Full-time").length})).filter(d=>d.total>0);
+  const deptSummary=departments.map(d=>({dept:d,total:staff.filter(s=>s.department===d).length,active:staff.filter(s=>s.department===d&&s.status==="Active").length,onLeave:staff.filter(s=>s.department===d&&s.status==="On Leave").length,fullTime:staff.filter(s=>s.department===d&&s.employmentType==="Full-time").length})).filter(d=>d.total>0);
   return(
     <div style={{display:"flex",flexDirection:"column",gap:24}}>
       <div><h2 style={{fontSize:20,fontWeight:700,color:NAVY2,margin:"0 0 4px"}}>Reports & Exports</h2><p style={{fontSize:13,color:"#666",margin:0}}>Download staff data as CSV files.</p></div>
@@ -1174,19 +1199,50 @@ function AuditLog({activity}){
 }
 
 // ══════════════════════════════════
+// ADMIN AVATAR (initials-based, no photo upload)
+// ══════════════════════════════════
+const AVATAR_COLORS=["#0a1f5c","#00472B","#7c3aed","#0891b2","#b45309","#9d174d","#166534","#1e40af"];
+function avatarColorFor(str){
+  let h=0; for(let i=0;i<(str||"").length;i++)h=str.charCodeAt(i)+((h<<5)-h);
+  return AVATAR_COLORS[Math.abs(h)%AVATAR_COLORS.length];
+}
+function AdminAvatar({admin,size=42}){
+  const label=admin?.name||admin?.username||"Admin";
+  const initials=label.split(" ").map(w=>w[0]).filter(Boolean).slice(0,2).join("").toUpperCase()||"A";
+  const isSuper=admin?.role==="super";
+  return(
+    <div style={{width:size,height:size,borderRadius:"50%",background:isSuper?GOLD:avatarColorFor(admin?.username||label),display:"flex",alignItems:"center",justifyContent:"center",fontSize:size*0.36,fontWeight:800,color:isSuper?NAVY2:WHITE,flexShrink:0,border:`2px solid ${isSuper?NAVY2:GOLD}`}}>
+      {initials}
+    </div>
+  );
+}
+
+// ══════════════════════════════════
+// PERMISSIONS
+// ══════════════════════════════════
+const PERMISSIONS=[
+  {key:"manageStaff",label:"Manage Staff",desc:"Edit and delete staff records"},
+  {key:"approveLeave",label:"Approve Leave",desc:"Approve or reject leave requests"},
+  {key:"viewReports",label:"View Reports",desc:"View and export reports"},
+  {key:"formBuilder",label:"Form Builder",desc:"Edit registration form fields"},
+  {key:"manageSettings",label:"Manage Settings",desc:"Manage admins & departments"},
+];
+const ADMIN_LIMIT=5;
+function defaultPermissions(){
+  return PERMISSIONS.reduce((acc,p)=>({...acc,[p.key]:false}),{});
+}
+
+// ══════════════════════════════════
 // ADMIN MANAGEMENT
 // ══════════════════════════════════
 function AdminManagement({admins, onAdd, onRemove}){
-  const [form,setForm]=useState({name:"",username:"",password:"",photo:""});
+  const [form,setForm]=useState({name:"",username:"",password:"",permissions:defaultPermissions()});
   const [errors,setErrors]=useState({});
   const [saving,setSaving]=useState(false);
   const [showForm,setShowForm]=useState(false);
-  const photoRef=useRef();
+  const atLimit = admins.length>=ADMIN_LIMIT;
 
-  function handlePhotoFile(e){
-    const file=e.target.files[0]; if(!file) return;
-    const reader=new FileReader(); reader.onload=ev=>setForm(f=>({...f,photo:ev.target.result})); reader.readAsDataURL(file);
-  }
+  function togglePerm(key){setForm(f=>({...f,permissions:{...f.permissions,[key]:!f.permissions[key]}}));}
   function validate(){
     const e={};
     if(!form.name.trim())e.name="Full name required";
@@ -1197,32 +1253,45 @@ function AdminManagement({admins, onAdd, onRemove}){
     return e;
   }
   async function handleAdd(){
+    if(atLimit) return;
     const errs=validate(); if(Object.keys(errs).length){setErrors(errs);return;}
     setSaving(true);
     await onAdd({...form,role:"admin",id:Date.now().toString()});
-    setForm({name:"",username:"",password:"",photo:""}); setShowForm(false); setSaving(false);
+    setForm({name:"",username:"",password:"",permissions:defaultPermissions()}); setShowForm(false); setSaving(false);
   }
   return(
     <div style={{display:"flex",flexDirection:"column",gap:20}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:10}}>
-        <div><h2 style={{fontSize:20,fontWeight:700,color:NAVY2,margin:"0 0 4px"}}>Admin Management</h2><p style={{fontSize:13,color:"#666",margin:0}}>Manage administrator accounts.</p></div>
-        <button onClick={()=>setShowForm(s=>!s)} style={{background:NAVY,color:WHITE,border:"none",borderRadius:8,padding:"10px 18px",fontWeight:600,fontSize:13,cursor:"pointer"}}>{showForm?"✕ Cancel":"+ Add Admin"}</button>
+        <div>
+          <h2 style={{fontSize:20,fontWeight:700,color:NAVY2,margin:"0 0 4px"}}>Admin Accounts</h2>
+          <p style={{fontSize:13,color:"#666",margin:0}}>Manage administrator accounts and permissions. ({admins.length}/{ADMIN_LIMIT} used)</p>
+        </div>
+        <button onClick={()=>setShowForm(s=>!s)} disabled={atLimit&&!showForm} style={{background:atLimit&&!showForm?"#aaa":NAVY,color:WHITE,border:"none",borderRadius:8,padding:"10px 18px",fontWeight:600,fontSize:13,cursor:atLimit&&!showForm?"not-allowed":"pointer"}}>{showForm?"✕ Cancel":"+ Add Admin"}</button>
       </div>
-      {showForm&&(
+      {atLimit&&<div style={{background:GOLDL,border:`1px solid ${GOLDM}`,borderRadius:8,padding:"10px 14px",fontSize:13,color:"#7a5c10"}}>⚠️ Admin limit reached ({ADMIN_LIMIT} max). Remove an admin to add a new one.</div>}
+      {showForm&&!atLimit&&(
         <div style={{background:WHITE,borderRadius:12,border:`1px solid ${GREENM}`,padding:24,display:"flex",flexDirection:"column",gap:16}}>
           <h3 style={{fontSize:15,fontWeight:700,color:NAVY2,margin:0}}>New Administrator</h3>
-          <div className="ui-photo-row" style={{display:"flex",gap:20,alignItems:"flex-start"}}>
+          <div style={{display:"flex",gap:20,alignItems:"flex-start"}}>
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,flexShrink:0}}>
-              <div onClick={()=>photoRef.current.click()} style={{width:80,height:80,borderRadius:"50%",border:`2px dashed ${GREENM}`,cursor:"pointer",overflow:"hidden",background:LGRAY,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                {form.photo?<img src={form.photo} alt="Admin" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<span style={{fontSize:24}}>📷</span>}
-              </div>
-              <input ref={photoRef} type="file" accept="image/*" style={{display:"none"}} onChange={handlePhotoFile}/>
-              <span style={{fontSize:10,color:"#999",textAlign:"center"}}>Profile photo<br/>(optional)</span>
+              <AdminAvatar admin={{name:form.name,username:form.username}} size={64}/>
+              <span style={{fontSize:10,color:"#999",textAlign:"center"}}>Admin Avatar<br/>(auto-generated)</span>
             </div>
             <div className="ui-grid-3" style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}>
               <Field label="Full Name *" error={errors.name}><FInput value={form.name} onChange={e=>{setForm(f=>({...f,name:e.target.value}));setErrors(x=>({...x,name:undefined}));}} placeholder="Dr. Adaobi Nwosu" hasError={!!errors.name}/></Field>
               <Field label="Username *" error={errors.username}><FInput value={form.username} onChange={e=>{setForm(f=>({...f,username:e.target.value}));setErrors(x=>({...x,username:undefined}));}} placeholder="adaobi.nwosu" hasError={!!errors.username}/></Field>
               <Field label="Password *" error={errors.password}><FInput value={form.password} onChange={e=>{setForm(f=>({...f,password:e.target.value}));setErrors(x=>({...x,password:undefined}));}} type="password" placeholder="Min 6 characters" hasError={!!errors.password}/></Field>
+            </div>
+          </div>
+          <div>
+            <p style={{fontSize:12,fontWeight:600,color:NAVY,margin:"0 0 10px"}}>Permissions — choose what this admin can do</p>
+            <div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+              {PERMISSIONS.map(p=>(
+                <label key={p.key} style={{display:"flex",alignItems:"flex-start",gap:8,cursor:"pointer",background:form.permissions[p.key]?GREENL:LGRAY,border:`1px solid ${form.permissions[p.key]?GREENM:GREENM}`,borderRadius:8,padding:"10px 12px"}}>
+                  <input type="checkbox" checked={!!form.permissions[p.key]} onChange={()=>togglePerm(p.key)} style={{marginTop:2,width:16,height:16}}/>
+                  <div><p style={{margin:0,fontSize:12,fontWeight:600,color:NAVY2}}>{p.label}</p><p style={{margin:0,fontSize:11,color:"#888"}}>{p.desc}</p></div>
+                </label>
+              ))}
             </div>
           </div>
           <div style={{display:"flex",justifyContent:"flex-end"}}>
@@ -1235,21 +1304,77 @@ function AdminManagement({admins, onAdd, onRemove}){
           <p style={{fontWeight:600,color:NAVY2,fontSize:14,margin:0}}>Current Administrators ({admins.length+1})</p>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:14,padding:"16px 18px",borderBottom:`1px solid ${GREENL}`,flexWrap:"wrap"}}>
-          <div style={{width:42,height:42,borderRadius:"50%",background:GOLD,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:800,color:NAVY2,flexShrink:0}}>A</div>
+          <AdminAvatar admin={{username:"admin",role:"super"}} size={42}/>
           <div style={{flex:1,minWidth:150}}><p style={{margin:0,fontSize:14,fontWeight:700,color:NAVY2}}>Administrator (Built-in)</p><p style={{margin:0,fontSize:12,color:"#888"}}>@admin · Super Admin</p></div>
-          <span style={{background:GOLDL,color:"#7a5c10",border:`1px solid ${GOLDM}`,borderRadius:20,fontSize:11,fontWeight:600,padding:"2px 10px"}}>🛡 Super Admin</span>
+          <span style={{background:GOLDL,color:"#7a5c10",border:`1px solid ${GOLDM}`,borderRadius:20,fontSize:11,fontWeight:600,padding:"2px 10px"}}>🛡 Super Admin · All permissions</span>
         </div>
         {admins.map((a,i)=>(
           <div key={a.id||i} style={{display:"flex",alignItems:"center",gap:14,padding:"16px 18px",borderBottom:i<admins.length-1?`1px solid ${GREENL}`:"none",background:i%2===0?WHITE:GREENL,flexWrap:"wrap"}}>
-            {a.photo?<div style={{width:42,height:42,borderRadius:"50%",overflow:"hidden",border:`2px solid ${GOLD}`,flexShrink:0}}><img src={a.photo} alt={a.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
-              :<div style={{width:42,height:42,borderRadius:"50%",background:NAVY,display:"flex",alignItems:"center",justifyContent:"center",color:GOLD,fontWeight:700,fontSize:16,flexShrink:0}}>{a.name?.[0]?.toUpperCase()||"A"}</div>}
-            <div style={{flex:1,minWidth:150}}><p style={{margin:0,fontSize:14,fontWeight:700,color:NAVY2}}>{a.name}</p><p style={{margin:0,fontSize:12,color:"#888"}}>@{a.username}</p></div>
-            <span style={{background:GREENL,color:GREEN,border:`1px solid ${GREENM}`,borderRadius:20,fontSize:11,fontWeight:600,padding:"2px 10px"}}>Admin</span>
+            <AdminAvatar admin={a} size={42}/>
+            <div style={{flex:1,minWidth:150}}>
+              <p style={{margin:0,fontSize:14,fontWeight:700,color:NAVY2}}>{a.name}</p>
+              <p style={{margin:0,fontSize:12,color:"#888"}}>@{a.username}</p>
+              <div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:6}}>
+                {PERMISSIONS.filter(p=>a.permissions?.[p.key]).map(p=>(
+                  <span key={p.key} style={{fontSize:10,background:GREENL,color:GREEN,border:`1px solid ${GREENM}`,borderRadius:12,padding:"1px 7px",fontWeight:600}}>{p.label}</span>
+                ))}
+                {!PERMISSIONS.some(p=>a.permissions?.[p.key])&&<span style={{fontSize:10,color:"#bbb"}}>No permissions assigned</span>}
+              </div>
+            </div>
             <button onClick={()=>onRemove(a.id)} style={{padding:"4px 10px",border:"1px solid #fecaca",borderRadius:6,background:WHITE,color:"#dc2626",cursor:"pointer",fontSize:12,fontWeight:500}}>Remove</button>
           </div>
         ))}
         {admins.length===0&&<p style={{color:"#bbb",fontSize:13,textAlign:"center",padding:"24px 0"}}>No additional admins yet.</p>}
       </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════
+// DEPARTMENT MANAGEMENT
+// ══════════════════════════════════
+function DepartmentManagement({departments,onUpdate}){
+  const [newDept,setNewDept]=useState("");
+  function addDept(){
+    const v=newDept.trim();
+    if(!v||departments.includes(v)) return;
+    onUpdate([...departments,v]);
+    setNewDept("");
+  }
+  function removeDept(d){ onUpdate(departments.filter(x=>x!==d)); }
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:16}}>
+      <div><h2 style={{fontSize:20,fontWeight:700,color:NAVY2,margin:"0 0 4px"}}>Departments</h2><p style={{fontSize:13,color:"#666",margin:0}}>Manage the list of departments used across the app.</p></div>
+      <div style={{display:"flex",gap:10}}>
+        <input value={newDept} onChange={e=>setNewDept(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addDept()} placeholder="Add new department…" style={{flex:1,padding:"9px 12px",border:`1.5px solid ${GREENM}`,borderRadius:6,fontSize:13}}/>
+        <button onClick={addDept} style={{background:GOLD,color:NAVY2,border:"none",borderRadius:6,padding:"9px 20px",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ Add</button>
+      </div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+        {departments.map(d=>(
+          <span key={d} style={{display:"flex",alignItems:"center",gap:8,background:GREENL,border:`1px solid ${GREENM}`,borderRadius:20,padding:"6px 8px 6px 14px",fontSize:12,fontWeight:600,color:NAVY2}}>
+            {d}
+            <button onClick={()=>removeDept(d)} style={{background:"none",border:"none",color:"#dc2626",cursor:"pointer",fontSize:13,padding:0,width:18,height:18,borderRadius:"50%"}}>✕</button>
+          </span>
+        ))}
+        {departments.length===0&&<p style={{color:"#bbb",fontSize:13}}>No departments yet.</p>}
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════
+// SETTINGS PAGE (Admins + Departments)
+// ══════════════════════════════════
+function SettingsPage({admins,onAdd,onRemove,departments,onUpdateDepartments}){
+  const [tab,setTab]=useState("admins");
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:20}}>
+      <div><h2 style={{fontSize:20,fontWeight:700,color:NAVY2,margin:"0 0 4px"}}>Settings</h2><p style={{fontSize:13,color:"#666",margin:0}}>Manage administrators, permissions, and departments.</p></div>
+      <div style={{display:"flex",gap:8}}>
+        <button onClick={()=>setTab("admins")} style={{padding:"7px 16px",border:`1px solid ${tab==="admins"?NAVY:GREENM}`,borderRadius:20,background:tab==="admins"?NAVY:WHITE,color:tab==="admins"?WHITE:NAVY,cursor:"pointer",fontSize:12,fontWeight:600}}>🛡 Admins</button>
+        <button onClick={()=>setTab("departments")} style={{padding:"7px 16px",border:`1px solid ${tab==="departments"?NAVY:GREENM}`,borderRadius:20,background:tab==="departments"?NAVY:WHITE,color:tab==="departments"?WHITE:NAVY,cursor:"pointer",fontSize:12,fontWeight:600}}>🏢 Departments</button>
+      </div>
+      {tab==="admins"?<AdminManagement admins={admins} onAdd={onAdd} onRemove={onRemove}/>:<DepartmentManagement departments={departments} onUpdate={onUpdateDepartments}/>}
     </div>
   );
 }
@@ -1340,10 +1465,96 @@ function FormBuilder({fieldConfig, onUpdate}){
   );
 }
 
-// ══════════════════════════════════
+
+// STAFF DETAIL MODAL (read-only full details)
+
+function DetailRow({label,value}){
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:2,padding:"8px 0",borderBottom:`1px solid ${GREENL}`}}>
+      <span style={{fontSize:11,color:"#888",fontWeight:600,letterSpacing:0.3}}>{label}</span>
+      <span style={{fontSize:13,color:NAVY2,fontWeight:500}}>{value||"—"}</span>
+    </div>
+  );
+}
+function StaffDetailModal({member,onClose,onEdit}){
+  const cfg=LEAVE_CONFIGS[member.leaveType];
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}>
+      <div style={{background:WHITE,borderRadius:14,width:"100%",maxWidth:640,maxHeight:"92vh",overflowY:"auto",boxShadow:"0 24px 60px rgba(10,31,92,0.3)"}}>
+        <div style={{background:NAVY,padding:"18px 22px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <Avatar name={`${member.firstName} ${member.lastName}`} photo={member.passportPhoto} size={48}/>
+            <div>
+              <p style={{fontWeight:700,color:WHITE,fontSize:16,margin:0}}>{member.firstName} {member.lastName}</p>
+              <p style={{color:GOLD,fontSize:12,margin:"2px 0 0",fontWeight:600}}>{member.employeeId}</p>
+            </div>
+          </div>
+          <button onClick={onClose} style={{background:"rgba(255,255,255,0.1)",border:"none",cursor:"pointer",fontSize:18,color:WHITE,width:32,height:32,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+        </div>
+        <div style={{padding:"14px 22px",display:"flex",gap:8,alignItems:"center",borderBottom:`1px solid ${GREENM}`,background:GREENL}}>
+          <Badge label={member.status||"Active"}/>
+          {member.status==="On Leave"&&member.returnDate&&<LeaveCountdownPill returnDate={member.returnDate}/>}
+        </div>
+        <div style={{padding:22,display:"flex",flexDirection:"column",gap:22}}>
+          <div>
+            <p style={{fontWeight:700,color:NAVY,fontSize:13,margin:"0 0 6px",letterSpacing:0.4,textTransform:"uppercase"}}>👤 Personal Info</p>
+            <div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 20px"}}>
+              <DetailRow label="First Name" value={member.firstName}/>
+              <DetailRow label="Last Name" value={member.lastName}/>
+              <DetailRow label="Date of Birth" value={member.dob}/>
+              <DetailRow label="Gender" value={member.gender}/>
+              <DetailRow label="Nationality" value={member.nationality}/>
+            </div>
+          </div>
+          <div>
+            <p style={{fontWeight:700,color:NAVY,fontSize:13,margin:"0 0 6px",letterSpacing:0.4,textTransform:"uppercase"}}>📞 Contact</p>
+            <div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 20px"}}>
+              <DetailRow label="Email Address" value={member.email}/>
+              <DetailRow label="Phone Number" value={member.phone}/>
+              <DetailRow label="Staff Dedicated Mail" value={member.staffEmail}/>
+              <DetailRow label="Alternate Mail" value={member.alternateEmail}/>
+              <DetailRow label="Address" value={member.address}/>
+              <DetailRow label="City" value={member.city}/>
+              <DetailRow label="State / Region" value={member.state}/>
+            </div>
+          </div>
+          <div>
+            <p style={{fontWeight:700,color:NAVY,fontSize:13,margin:"0 0 6px",letterSpacing:0.4,textTransform:"uppercase"}}>💼 Employment</p>
+            <div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 20px"}}>
+              <DetailRow label="Job Title" value={member.jobTitle}/>
+              <DetailRow label="Department" value={member.department}/>
+              <DetailRow label="Employment Type" value={member.employmentType}/>
+              <DetailRow label="Start Date" value={member.startDate}/>
+              <DetailRow label="Assumption of Duty Date" value={member.assumptionDate}/>
+              <DetailRow label="PF Number" value={member.pfNumber}/>
+              <DetailRow label="Status" value={member.status}/>
+              {member.status==="On Leave"&&<DetailRow label="Leave Type" value={cfg?`${cfg.icon} ${member.leaveType}`:member.leaveType}/>}
+              {member.status==="On Leave"&&<DetailRow label="Leave Start Date" value={member.leaveStartDate}/>}
+              {member.status==="On Leave"&&<DetailRow label="Return Date" value={member.returnDate}/>}
+            </div>
+          </div>
+          <div>
+            <p style={{fontWeight:700,color:NAVY,fontSize:13,margin:"0 0 6px",letterSpacing:0.4,textTransform:"uppercase"}}>🚨 Emergency Contact</p>
+            <div className="ui-grid-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 20px"}}>
+              <DetailRow label="Contact Name" value={member.emergencyName}/>
+              <DetailRow label="Relationship" value={member.emergencyRelation}/>
+              <DetailRow label="Contact Phone" value={member.emergencyPhone}/>
+            </div>
+          </div>
+        </div>
+        <div style={{display:"flex",justifyContent:"flex-end",gap:10,padding:"14px 22px",borderTop:`1px solid ${GREENM}`,background:LGRAY}}>
+          <button onClick={onClose} style={{padding:"8px 16px",border:`1px solid ${GREENM}`,borderRadius:6,background:WHITE,cursor:"pointer",color:"#555",fontSize:13}}>Close</button>
+          <button onClick={()=>{onClose();onEdit(member);}} style={{background:GOLD,color:NAVY2,border:"none",borderRadius:6,padding:"8px 20px",fontWeight:700,cursor:"pointer",fontSize:13}}>✎ Edit Record</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 // EDIT MODAL
-// ══════════════════════════════════
-function EditModal({member,onSave,onClose}){
+
+function EditModal({member,onSave,onClose,departments}){
   const [form,setForm]=useState(member); const [section,setSection]=useState(0);
   const [errors,setErrors]=useState({}); const [saving,setSaving]=useState(false);
   function setF(k,v){
@@ -1354,6 +1565,8 @@ function EditModal({member,onSave,onClose}){
     const e={};
     if(!form.firstName.trim())e.firstName="Required"; if(!form.lastName.trim())e.lastName="Required";
     if(!form.email.trim())e.email="Required"; else if(!/\S+@\S+\.\S+/.test(form.email))e.email="Invalid email";
+    if(form.staffEmail&&!/\S+@\S+\.\S+/.test(form.staffEmail))e.staffEmail="Invalid email";
+    if(form.alternateEmail&&!/\S+@\S+\.\S+/.test(form.alternateEmail))e.alternateEmail="Invalid email";
     if(!form.phone.trim())e.phone="Required"; if(!form.jobTitle.trim())e.jobTitle="Required"; if(!form.department)e.department="Required";
     if(form.status==="On Leave"){if(!form.leaveType)e.leaveType="Required";if(!form.returnDate)e.returnDate="Required";}
     return e;
@@ -1385,12 +1598,14 @@ function EditModal({member,onSave,onClose}){
           </div>}
           {section===1&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
             <div className="ui-grid-2" style={g2}><Field label="Email *" error={errors.email}><FInput value={form.email} onChange={e=>setF("email",e.target.value)} type="email" hasError={!!errors.email}/></Field><Field label="Phone *" error={errors.phone}><FInput value={form.phone} onChange={e=>setF("phone",e.target.value)} hasError={!!errors.phone}/></Field></div>
+            <div className="ui-grid-2" style={g2}><Field label="Staff Dedicated Mail" error={errors.staffEmail}><FInput value={form.staffEmail||""} onChange={e=>setF("staffEmail",e.target.value)} type="email" hasError={!!errors.staffEmail}/></Field><Field label="Alternate Mail" error={errors.alternateEmail}><FInput value={form.alternateEmail||""} onChange={e=>setF("alternateEmail",e.target.value)} type="email" hasError={!!errors.alternateEmail}/></Field></div>
             <Field label="Address"><FInput value={form.address} onChange={e=>setF("address",e.target.value)}/></Field>
             <div className="ui-grid-2" style={g2}><Field label="City"><FInput value={form.city} onChange={e=>setF("city",e.target.value)}/></Field><Field label="State"><FInput value={form.state} onChange={e=>setF("state",e.target.value)}/></Field></div>
           </div>}
           {section===2&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
-            <div className="ui-grid-2" style={g2}><Field label="Job title *" error={errors.jobTitle}><FInput value={form.jobTitle} onChange={e=>setF("jobTitle",e.target.value)} hasError={!!errors.jobTitle}/></Field><Field label="Department *" error={errors.department}><FSelect value={form.department} onChange={e=>setF("department",e.target.value)} options={DEPARTMENTS} hasError={!!errors.department}/></Field></div>
+            <div className="ui-grid-2" style={g2}><Field label="Job title *" error={errors.jobTitle}><FInput value={form.jobTitle} onChange={e=>setF("jobTitle",e.target.value)} hasError={!!errors.jobTitle}/></Field><Field label="Department *" error={errors.department}><FSelect value={form.department} onChange={e=>setF("department",e.target.value)} options={departments} hasError={!!errors.department}/></Field></div>
             <div className="ui-grid-3" style={g3}><Field label="Employment type"><FSelect value={form.employmentType} onChange={e=>setF("employmentType",e.target.value)} options={EMP_TYPES}/></Field><Field label="Start date"><FInput value={form.startDate} onChange={e=>setF("startDate",e.target.value)} type="date"/></Field><Field label="Status"><FSelect value={form.status} onChange={e=>setF("status",e.target.value)} options={STATUS_OPS}/></Field></div>
+            <div className="ui-grid-2" style={g2}><Field label="Assumption of Duty Date"><FInput value={form.assumptionDate||""} onChange={e=>setF("assumptionDate",e.target.value)} type="date"/></Field><Field label="PF Number"><FInput value={form.pfNumber||""} onChange={e=>setF("pfNumber",e.target.value)}/></Field></div>
             {form.status==="On Leave"&&<div style={{background:GOLDL,border:`1px solid ${GOLDM}`,borderRadius:10,padding:16,display:"flex",flexDirection:"column",gap:14}}>
               <div className="ui-grid-2" style={g2}><Field label="Type of leave *" error={errors.leaveType}><FSelect value={form.leaveType||""} onChange={e=>setF("leaveType",e.target.value)} options={LEAVE_TYPES} hasError={!!errors.leaveType}/></Field><Field label="Leave start date"><FInput value={form.leaveStartDate||""} onChange={e=>setF("leaveStartDate",e.target.value)} type="date"/></Field></div>
               <Field label="Override return date" error={errors.returnDate}><FInput value={form.returnDate||""} onChange={e=>setF("returnDate",e.target.value)} type="date" hasError={!!errors.returnDate}/></Field>
@@ -1426,9 +1641,11 @@ CREATE TABLE IF NOT EXISTS staff (
   first_name text NOT NULL, last_name text NOT NULL,
   dob date, gender text, nationality text,
   email text NOT NULL, phone text NOT NULL,
+  staff_email text, alternate_email text,
   address text, city text, state text,
   job_title text NOT NULL, department text,
   employment_type text, start_date date,
+  assumption_date date, pf_number text,
   status text DEFAULT 'Active',
   passport_photo text,
   leave_type text, return_date date, leave_start_date date,
@@ -1436,6 +1653,12 @@ CREATE TABLE IF NOT EXISTS staff (
   custom_data text,
   created_at timestamptz DEFAULT now()
 );
+
+-- If upgrading an existing table, run these too:
+ALTER TABLE staff ADD COLUMN IF NOT EXISTS staff_email text;
+ALTER TABLE staff ADD COLUMN IF NOT EXISTS alternate_email text;
+ALTER TABLE staff ADD COLUMN IF NOT EXISTS assumption_date date;
+ALTER TABLE staff ADD COLUMN IF NOT EXISTS pf_number text;
 
 CREATE TABLE IF NOT EXISTS leave_requests (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1493,11 +1716,8 @@ CREATE POLICY "Allow all activity" ON activity_log FOR ALL TO anon USING (true) 
   );
 }
 
-// ══════════════════════════════════
+
 // GLOBAL RESPONSIVE STYLES
-// FIX: inline styles can't use media queries, so we inject one shared
-// stylesheet used across every screen for mobile breakpoints.
-// ══════════════════════════════════
 function GlobalResponsiveStyles(){
   return (
     <style>{`
@@ -1536,11 +1756,13 @@ export default function AdminApp(){
   const [admins,setAdmins]=useState([]);
   const [leaveRequests,setLeaveRequests]=useState([]);
   const [editTarget,setEditTarget]=useState(null);
+  const [viewTarget,setViewTarget]=useState(null);
   const [toast,setToast]=useState(null);
   const [loading,setLoading]=useState(false);
   const [dbError,setDbError]=useState(null);
   const [currentAdmin,setCurrentAdmin]=useState(null);
   const [fieldConfig,setFieldConfig]=useState(DEFAULT_FIELDS);
+  const [departments,setDepartments]=useState(DEPARTMENTS);
   const [mobileNavOpen,setMobileNavOpen]=useState(false);
 
   function showToast(msg,type="success"){setToast({msg,type});setTimeout(()=>setToast(null),3500);}
@@ -1636,6 +1858,7 @@ export default function AdminApp(){
     const{error}=await supabase.from("leave_requests").update({status:"Approved",admin_note:adminNote||null}).eq("id",id);
     if(error){showToast("Failed: "+error.message,"danger");return;}
     setLeaveRequests(r=>r.map(x=>x.id===id?{...x,status:"Approved",adminNote}:x));
+    await fetchAll();
     await logActivity("leave-approved",`Leave approved: ${req?.staffName} (${req?.leaveType})`);
     showToast(`Leave approved for ${req?.staffName}.`);
   }
@@ -1650,6 +1873,7 @@ export default function AdminApp(){
   }
 
   function handleAddAdmin(admin){
+    if(admins.length>=ADMIN_LIMIT){ showToast(`Admin limit of ${ADMIN_LIMIT} reached.`,"danger"); return; }
     setAdmins(a=>[...a,admin]);
     logActivity("admin-add",`New admin registered: ${admin.name} (@${admin.username})`);
     showToast(`Admin account created for ${admin.name}.`);
@@ -1693,8 +1917,8 @@ export default function AdminApp(){
     {key:"leave-requests",label:"Leave Requests",icon:"📋",badge:pendingLeaveCount},
     {key:"reports",label:"Reports",icon:"📊"},
     {key:"activity",label:"Audit Log",icon:"📋"},
-    {key:"admins",label:"Admin Accounts",icon:"🛡"},
-    {key:"formbuilder",label:"Form Builder",icon:"⚙️"},
+    {key:"settings",label:"Settings",icon:"⚙️"},
+    {key:"formbuilder",label:"Form Builder",icon:"🛠"},
   ];
 
   if(screen==="role") return <><GlobalResponsiveStyles/><RoleSelect onSelectRole={r=>{
@@ -1702,8 +1926,8 @@ export default function AdminApp(){
     else if(r==="leave-request") setScreen("leave-request");
     else setScreen("admin-login");
   }}/></>;
-  if(screen==="staff-form") return <><GlobalResponsiveStyles/><StaffRegistration onSubmit={handleRegister} onBack={()=>setScreen("role")} fieldConfig={fieldConfig}/></>;
-  if(screen==="leave-request") return <><GlobalResponsiveStyles/><LeaveRequestForm onBack={()=>setScreen("role")} onSubmit={handleLeaveRequest}/></>;
+  if(screen==="staff-form") return <><GlobalResponsiveStyles/><StaffRegistration onSubmit={handleRegister} onBack={()=>setScreen("role")} fieldConfig={fieldConfig} departments={departments}/></>;
+  if(screen==="leave-request") return <><GlobalResponsiveStyles/><LeaveRequestForm onBack={()=>setScreen("role")} onSubmit={handleLeaveRequest} departments={departments}/></>;
   if(screen==="admin-login") return <><GlobalResponsiveStyles/><AdminLogin onLogin={a=>{setCurrentAdmin(a);setScreen("admin");}} onBack={()=>setScreen("role")} admins={admins}/></>;
   if(dbError) return <><GlobalResponsiveStyles/><SetupGuide error={dbError}/></>;
 
@@ -1737,7 +1961,7 @@ export default function AdminApp(){
         <div style={{padding:"16px",borderBottom:"1px solid rgba(255,255,255,0.08)",display:"flex",alignItems:"center",gap:10}}>
           <img src="https://upload.wikimedia.org/wikipedia/en/8/8a/University_of_Ibadan_logo.png" alt="UI" style={{height:40,width:40,objectFit:"contain",flexShrink:0}} onError={e=>{e.currentTarget.style.display="none";}}/>
           <div style={{flex:1,minWidth:0}}>
-            <p style={{color:WHITE,fontWeight:700,fontSize:12,margin:0,lineHeight:1.2}}>University of Ibadan</p>
+            <p style={{color:WHITE,fontWeight:700,fontSize:12,margin:0,lineHeight:1.2}}>Staff Data</p>
             <p style={{color:GOLD,fontSize:10,margin:"2px 0 0",fontWeight:600}}>Admin Portal</p>
           </div>
           <button className="ui-hamburger" onClick={()=>setMobileNavOpen(false)} style={{display:"none",background:"rgba(255,255,255,0.1)",border:"none",color:WHITE,width:28,height:28,borderRadius:6,cursor:"pointer",fontSize:16,alignItems:"center",justifyContent:"center",flexShrink:0}}>×</button>
@@ -1752,10 +1976,7 @@ export default function AdminApp(){
           ))}
         </nav>
         <div style={{padding:"12px 16px",borderTop:"1px solid rgba(255,255,255,0.08)",display:"flex",alignItems:"center",gap:10}}>
-          {currentAdmin?.photo
-            ?<div style={{width:36,height:36,borderRadius:"50%",overflow:"hidden",border:`2px solid ${GOLD}`,flexShrink:0}}><img src={currentAdmin.photo} alt="admin" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
-            :<div style={{width:36,height:36,borderRadius:"50%",background:GOLD,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:800,color:NAVY2,flexShrink:0}}>{currentAdmin?.username?.[0]?.toUpperCase()||"A"}</div>
-          }
+          <AdminAvatar admin={currentAdmin} size={36}/>
           <div style={{flex:1,minWidth:0}}>
             <p style={{margin:0,fontSize:12,fontWeight:600,color:WHITE,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{currentAdmin?.name||currentAdmin?.username||"Admin"}</p>
             <button onClick={()=>setScreen("role")} style={{background:"none",border:"none",color:"rgba(255,255,255,0.4)",fontSize:11,cursor:"pointer",padding:0}}>⏻ Sign out</button>
@@ -1774,26 +1995,23 @@ export default function AdminApp(){
             <button onClick={fetchAll} style={{fontSize:11,color:"rgba(255,255,255,0.6)",background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:6,padding:"3px 10px",cursor:"pointer",flexShrink:0}}>↻ Refresh</button>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
-            {currentAdmin?.photo
-              ?<div style={{width:34,height:34,borderRadius:"50%",overflow:"hidden",border:`2px solid ${GOLD}`}}><img src={currentAdmin.photo} alt="admin" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
-              :<div style={{width:34,height:34,borderRadius:"50%",background:GOLD,display:"flex",alignItems:"center",justifyContent:"center",color:NAVY2,fontWeight:800,fontSize:15}}>{currentAdmin?.username?.[0]?.toUpperCase()||"A"}</div>
-            }
-            <div style={{display:"none"}} className="ui-admin-name"><p style={{margin:0,fontSize:13,fontWeight:600,color:WHITE}}>{currentAdmin?.name||currentAdmin?.username||"Admin"}</p><p style={{margin:0,fontSize:10,color:"rgba(255,255,255,0.5)"}}>{currentAdmin?.role==="super"?"Super Admin":"Administrator"}</p></div>
+            <AdminAvatar admin={currentAdmin} size={34}/>
           </div>
         </div>
 
         <div className="ui-main-content" style={{flex:1,padding:28,overflowY:"auto"}}>
-          {page==="dashboard"&&<DashboardHome staff={staff} activity={activity} currentAdmin={currentAdmin} pendingLeaveCount={pendingLeaveCount}/>}
-          {page==="staff"&&<StaffDirectory staff={staff} onEdit={m=>setEditTarget(m)} onDelete={handleDelete}/>}
+          {page==="dashboard"&&<DashboardHome staff={staff} activity={activity} currentAdmin={currentAdmin} pendingLeaveCount={pendingLeaveCount} departments={departments}/>}
+          {page==="staff"&&<StaffDirectory staff={staff} onEdit={m=>setEditTarget(m)} onDelete={handleDelete} onView={m=>setViewTarget(m)} departments={departments}/>}
           {page==="leave-requests"&&<LeaveRequestsAdmin requests={leaveRequests} onApprove={handleApproveLeave} onReject={handleRejectLeave} onRefresh={fetchAll}/>}
-          {page==="reports"&&<ReportsPage staff={staff}/>}
+          {page==="reports"&&<ReportsPage staff={staff} departments={departments}/>}
           {page==="activity"&&<AuditLog activity={activity}/>}
-          {page==="admins"&&<AdminManagement admins={admins} onAdd={handleAddAdmin} onRemove={handleRemoveAdmin}/>}
+          {page==="settings"&&<SettingsPage admins={admins} onAdd={handleAddAdmin} onRemove={handleRemoveAdmin} departments={departments} onUpdateDepartments={setDepartments}/>}
           {page==="formbuilder"&&<FormBuilder fieldConfig={fieldConfig} onUpdate={setFieldConfig}/>}
         </div>
       </div>
 
-      {editTarget&&<EditModal member={editTarget} onSave={handleEdit} onClose={()=>setEditTarget(null)}/>}
+      {editTarget&&<EditModal member={editTarget} onSave={handleEdit} onClose={()=>setEditTarget(null)} departments={departments}/>}
+      {viewTarget&&<StaffDetailModal member={viewTarget} onClose={()=>setViewTarget(null)} onEdit={m=>setEditTarget(m)}/>}
 
       {toast&&(
         <div style={{position:"fixed",bottom:24,right:24,left:24,zIndex:300,background:toast.type==="danger"?"#fef2f2":GREENL,color:toast.type==="danger"?"#991b1b":NAVY2,border:`1px solid ${toast.type==="danger"?"#fecaca":GREENM}`,padding:"12px 18px",borderRadius:8,fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:8,boxShadow:"0 4px 20px rgba(0,0,0,0.15)",maxWidth:420,marginLeft:"auto"}}>
