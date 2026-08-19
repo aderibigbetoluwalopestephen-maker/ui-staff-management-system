@@ -200,6 +200,85 @@ function leaveReqFromDb(row) {
 }
 
 
+// ── CSV import helpers (Reports > Import Staff Data) ──
+// Mirrors the header order used by ReportsPage.exportCSV, mapped to the same
+// form-field keys that toDb() expects.
+const CSV_FIELD_MAP = {
+  "Employee ID": "employeeId",
+  "First Name": "firstName",
+  "Last Name": "lastName",
+  "Email": "email",
+  "Staff Mail": "staffEmail",
+  "Alternate Mail": "alternateEmail",
+  "Phone": "phone",
+  "Department": "department",
+  "Job Title": "jobTitle",
+  "Status": "status",
+  "PF Number": "pfNumber",
+  "Assumption Date": "assumptionDate",
+  "Leave Type": "leaveType",
+  "Leave Start": "leaveStartDate",
+  "Return Date": "returnDate",
+  "Start Date": "startDate",
+  "Employment Type": "employmentType",
+  "Gender": "gender",
+};
+const CSV_REQUIRED_LABELS = { firstName:"First Name", lastName:"Last Name", email:"Email", phone:"Phone", jobTitle:"Job Title", department:"Department", startDate:"Start Date" };
+
+// Small RFC4180-ish CSV parser: handles quoted fields, escaped quotes ("")
+// and both \n and \r\n line endings.
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = "", inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { row.push(field); field = ""; }
+      else if (c === '\n' || c === '\r') {
+        if (c === '\r' && text[i + 1] === '\n') i++;
+        row.push(field); field = "";
+        if (row.some(v => v !== "")) rows.push(row);
+        row = [];
+      } else field += c;
+    }
+  }
+  if (field !== "" || row.length) { row.push(field); if (row.some(v => v !== "")) rows.push(row); }
+  return rows;
+}
+
+// Parses raw CSV text into { valid: form[], invalid: {row,name,missing}[] }
+// using the same field keys as toDb(), so each `valid` entry can be passed
+// straight through toDb() -> supabase.from("staff").insert(...).
+function parseStaffCSV(text) {
+  const rows = parseCSV(text);
+  if (rows.length < 2) return { valid: [], invalid: [], headerError: true };
+  const headers = rows[0].map(h => h.trim());
+  const valid = [], invalid = [];
+  rows.slice(1).forEach((r, idx) => {
+    const obj = {};
+    headers.forEach((h, i) => {
+      const key = CSV_FIELD_MAP[h];
+      if (key) obj[key] = (r[i] || "").trim();
+    });
+    if (!Object.values(obj).some(v => v)) return; // skip fully blank rows
+    const missing = Object.entries(CSV_REQUIRED_LABELS).filter(([k]) => !obj[k]).map(([, label]) => label);
+    if (!obj.employeeId) obj.employeeId = genId(obj.firstName, obj.lastName, obj.startDate);
+    if (!obj.status) obj.status = "Active";
+    if (missing.length) {
+      invalid.push({ row: idx + 2, name: `${obj.firstName || ""} ${obj.lastName || ""}`.trim() || "(unnamed)", missing });
+    } else {
+      valid.push(obj);
+    }
+  });
+  return { valid, invalid };
+}
+
 // SHARED COMPONENTS
 
 function Avatar({name,photo,size=36}){
@@ -349,7 +428,7 @@ function LeaveInfoBanner({leaveType,leaveStartDate,returnDate}){
         </div>
       </div>
       {returnDate&&cd&&<p style={{fontSize:12,color:"#7a5c10",margin:0,fontWeight:500,marginTop:4}}>
-        {cd.expired?`⚠️ Return date was ${cd.daysOverdue} day${cd.daysOverdue===1?"":"s"} ago`:cd.today?"🔔 Expected to return today":`⏳ ${cd.totalDays} day${cd.totalDays===1?"":"s"} remaining`}
+        {cd.expired?`⚠️ Return date was ${cd.daysOverdue} day${cd.daysOverdue===1?"":"s"} ago`:cd.today?" Expected to return today":`⏳ ${cd.totalDays} day${cd.totalDays===1?"":"s"} remaining`}
       </p>}
     </div>
   );
@@ -360,7 +439,7 @@ function LeaveCountdownPanel({staff}){
   return(
     <div style={{background:WHITE,borderRadius:10,border:`1px solid ${GREENM}`,overflow:"hidden"}}>
       <div style={{padding:"14px 18px",borderBottom:`1px solid ${GREENM}`,background:GOLDL,display:"flex",alignItems:"center",gap:8}}>
-        <span style={{fontSize:16}}>🏖️</span>
+        <span style={{fontSize:16}}></span>
         <p style={{fontWeight:600,color:"#7a5c10",fontSize:14,margin:0}}>Staff on leave ({onLeave.length})</p>
       </div>
       {onLeave.map((m,i)=>{
@@ -1134,7 +1213,73 @@ function StaffDirectory({staff,onEdit,onDelete,onView,departments}){
 // ══════════════════════════════════
 // REPORTS
 // ══════════════════════════════════
-function ReportsPage({staff,departments}){
+function StaffImport({onImport}){
+  const fileRef = useRef(null);
+  const [parsed, setParsed] = useState(null); // {valid, invalid, headerError}
+  const [fileName, setFileName] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [result, setResult] = useState(null);
+
+  function handleFile(e){
+    const file = e.target.files?.[0];
+    if(!file) return;
+    setFileName(file.name);
+    setResult(null);
+    const reader = new FileReader();
+    reader.onload = ev => setParsed(parseStaffCSV(String(ev.target.result||"")));
+    reader.onerror = () => setParsed({valid:[],invalid:[],headerError:true});
+    reader.readAsText(file);
+  }
+
+  async function doImport(){
+    if(!parsed || parsed.valid.length===0) return;
+    setImporting(true);
+    const res = await onImport(parsed.valid);
+    setImporting(false);
+    setResult(res);
+    if(res.success){
+      setParsed(null); setFileName("");
+      if(fileRef.current) fileRef.current.value="";
+    }
+  }
+
+  return(
+    <div style={{background:WHITE,borderRadius:10,border:`1px solid ${GREENM}`,padding:20,display:"flex",flexDirection:"column",gap:14}}>
+      <div>
+        <p style={{fontWeight:600,color:NAVY2,fontSize:14,margin:"0 0 4px"}}>Import Staff Data</p>
+        <p style={{fontSize:12,color:"#666",margin:0}}>Upload a CSV in the same format as the exports below (Employee ID, First Name, Last Name, Email, Staff Mail, Alternate Mail, Phone, Department, Job Title, Status, PF Number, Assumption Date, Leave Type, Leave Start, Return Date, Start Date, Employment Type, Gender). First Name, Last Name, Email, Phone, Department, Job Title and Start Date are required per row — Employee ID is auto-generated if left blank.</p>
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+        <input ref={fileRef} type="file" accept=".csv,text/csv" onChange={handleFile} style={{fontSize:12}}/>
+        {fileName && <span style={{fontSize:12,color:"#666"}}>{fileName}</span>}
+      </div>
+      {parsed?.headerError && <p style={{fontSize:12,color:"#dc2626",margin:0}}>Couldn't read that file — make sure it's a CSV with a header row.</p>}
+      {parsed && !parsed.headerError && (
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
+            <span style={{fontSize:12,color:GREEN,fontWeight:600}}>✓ {parsed.valid.length} row(s) ready to import</span>
+            {parsed.invalid.length>0 && <span style={{fontSize:12,color:"#dc2626",fontWeight:600}}>⚠ {parsed.invalid.length} row(s) skipped (missing required fields)</span>}
+          </div>
+          {parsed.invalid.length>0 && (
+            <div style={{maxHeight:120,overflowY:"auto",background:"#fef2f2",border:"1px solid #fecaca",borderRadius:6,padding:"8px 12px"}}>
+              {parsed.invalid.map((r,i)=>(
+                <p key={i} style={{fontSize:11,color:"#991b1b",margin:"2px 0"}}>Row {r.row} ({r.name}): missing {r.missing.join(", ")}</p>
+              ))}
+            </div>
+          )}
+          <button onClick={doImport} disabled={parsed.valid.length===0||importing}
+            style={{background:parsed.valid.length===0||importing?"#aaa":NAVY,color:WHITE,border:"none",borderRadius:6,padding:"10px 16px",fontWeight:600,fontSize:13,cursor:parsed.valid.length===0||importing?"not-allowed":"pointer",alignSelf:"flex-start"}}>
+            {importing?"Importing…":`Import ${parsed.valid.length} record(s)`}
+          </button>
+        </div>
+      )}
+      {result && !result.success && <p style={{fontSize:12,color:"#dc2626",margin:0}}>Import failed: {result.error}</p>}
+      {result && result.success && <p style={{fontSize:12,color:GREEN,margin:0}}>✓ {result.imported} record(s) imported successfully.</p>}
+    </div>
+  );
+}
+
+function ReportsPage({staff,departments,onImport}){
   function exportCSV(rows,filename){
     const headers=["Employee ID","First Name","Last Name","Email","Staff Mail","Alternate Mail","Phone","Department","Job Title","Status","PF Number","Assumption Date","Leave Type","Leave Start","Return Date","Start Date","Employment Type","Gender"];
     const csv=[headers,...rows.map(s=>[s.employeeId,s.firstName,s.lastName,s.email,s.staffEmail||"",s.alternateEmail||"",s.phone,s.department,s.jobTitle,s.status,s.pfNumber||"",s.assumptionDate||"",s.leaveType||"",s.leaveStartDate||"",s.returnDate||"",s.startDate,s.employmentType,s.gender])].map(r=>r.map(c=>`"${c||""}"`).join(",")).join("\n");
@@ -1144,7 +1289,8 @@ function ReportsPage({staff,departments}){
   const deptSummary=departments.map(d=>({dept:d,total:staff.filter(s=>s.department===d).length,active:staff.filter(s=>s.department===d&&s.status==="Active").length,onLeave:staff.filter(s=>s.department===d&&s.status==="On Leave").length,fullTime:staff.filter(s=>s.department===d&&s.employmentType==="Full-time").length})).filter(d=>d.total>0);
   return(
     <div style={{display:"flex",flexDirection:"column",gap:24}}>
-      <div><h2 style={{fontSize:20,fontWeight:700,color:NAVY2,margin:"0 0 4px"}}>Reports & Exports</h2><p style={{fontSize:13,color:"#666",margin:0}}>Download staff data as CSV files.</p></div>
+      <div><h2 style={{fontSize:20,fontWeight:700,color:NAVY2,margin:"0 0 4px"}}>Reports & Exports</h2><p style={{fontSize:13,color:"#666",margin:0}}>Download staff data as CSV files, or import staff in bulk below.</p></div>
+      <StaffImport onImport={onImport}/>
       <div className="ui-reports-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:14}}>
         {reports.map(r=>(
           <div key={r.title} style={{background:WHITE,borderRadius:10,padding:20,border:`1px solid ${GREENM}`,display:"flex",flexDirection:"column",gap:10}}>
@@ -1770,10 +1916,11 @@ export default function AdminApp(){
   async function fetchAll(){
     setLoading(true);
     try{
-      const[{data:sData,error:sErr},{data:aData,error:aErr},{data:lData,error:lErr}]=await Promise.all([
+      const[{data:sData,error:sErr},{data:aData,error:aErr},{data:lData,error:lErr},{data:adminData,error:adminErr}]=await Promise.all([
         supabase.from("staff").select("*").order("created_at",{ascending:false}),
         supabase.from("activity_log").select("*").order("created_at",{ascending:false}),
         supabase.from("leave_requests").select("*").order("created_at",{ascending:false}),
+        supabase.from("admins").select("*").order("created_at",{ascending:false}),
       ]);
       if(sErr||aErr){
         const msg=(sErr||aErr).message||"";
@@ -1788,6 +1935,13 @@ export default function AdminApp(){
       // Handle leave_requests table not existing yet (graceful)
       if(lErr && lErr.message?.includes("does not exist")){
         setLeaveRequests([]);
+      }
+      // Handle admins table not existing yet (graceful) — create it in Supabase, see setup notes
+      if(adminErr){
+        if(adminErr.message?.includes("does not exist")) setAdmins([]);
+        else showToast("Error loading admins: "+adminErr.message,"danger");
+      } else {
+        setAdmins(adminData||[]);
       }
     }catch(e){showToast("Network error: "+e.message,"danger");}
     setLoading(false);
@@ -1814,6 +1968,25 @@ export default function AdminApp(){
     setStaff(s=>[fromDb(data),...s]);
     await logActivity("register",`New registration: ${form.firstName} ${form.lastName} (${form.employeeId||genId(form.firstName,form.lastName,form.startDate)})`);
     return {success:true};
+  }
+
+  // Bulk insert for Reports > Import Staff Data. `rows` is an array of
+  // form-shaped objects (same keys StaffRegistration produces), already
+  // validated by parseStaffCSV. Inserts in one batched call.
+  async function handleBulkImport(rows){
+    if(!rows || rows.length===0) return {success:false, error:"No valid rows to import.", imported:0};
+    const payload = rows.map(toDb);
+    const{data,error}=await supabase.from("staff").insert(payload).select();
+    if(error){
+      console.error("Bulk import error:", error);
+      showToast("Import failed: "+error.message,"danger");
+      return {success:false, error:error.message, imported:0};
+    }
+    const inserted = data||[];
+    setStaff(s=>[...inserted.map(fromDb),...s]);
+    await logActivity("register",`Bulk import: ${inserted.length} staff record(s) added`);
+    showToast(`${inserted.length} staff record(s) imported successfully.`);
+    return {success:true, imported:inserted.length};
   }
 
   async function handleEdit(form){
@@ -1855,31 +2028,67 @@ export default function AdminApp(){
 
   async function handleApproveLeave(id, adminNote){
     const req = leaveRequests.find(r=>r.id===id);
-    const{error}=await supabase.from("leave_requests").update({status:"Approved",admin_note:adminNote||null}).eq("id",id);
+    // FIX: chain .select() so Supabase actually returns the updated row(s).
+    // Without it, an RLS policy silently blocking the update returns NO error
+    // and 0 rows changed — the UI looks fine until the next refresh/refetch.
+    const{data,error}=await supabase.from("leave_requests")
+      .update({status:"Approved",admin_note:adminNote||null})
+      .eq("id",id)
+      .select();
     if(error){showToast("Failed: "+error.message,"danger");return;}
+    if(!data||data.length===0){
+      showToast("Update didn't save — check the UPDATE policy on leave_requests in Supabase.","danger");
+      return;
+    }
     setLeaveRequests(r=>r.map(x=>x.id===id?{...x,status:"Approved",adminNote}:x));
-    await fetchAll();
     await logActivity("leave-approved",`Leave approved: ${req?.staffName} (${req?.leaveType})`);
     showToast(`Leave approved for ${req?.staffName}.`);
   }
 
   async function handleRejectLeave(id, adminNote){
     const req = leaveRequests.find(r=>r.id===id);
-    const{error}=await supabase.from("leave_requests").update({status:"Rejected",admin_note:adminNote||null}).eq("id",id);
+    // FIX: same .select() check as approve — this is what was making rejections
+    // revert to "Pending" after a refresh (the DB row was never actually updated).
+    const{data,error}=await supabase.from("leave_requests")
+      .update({status:"Rejected",admin_note:adminNote||null})
+      .eq("id",id)
+      .select();
     if(error){showToast("Failed: "+error.message,"danger");return;}
+    if(!data||data.length===0){
+      showToast("Update didn't save — check the UPDATE policy on leave_requests in Supabase.","danger");
+      return;
+    }
     setLeaveRequests(r=>r.map(x=>x.id===id?{...x,status:"Rejected",adminNote}:x));
     await logActivity("leave-rejected",`Leave rejected: ${req?.staffName} (${req?.leaveType})`);
     showToast(`Leave request for ${req?.staffName} rejected.`,"danger");
   }
 
-  function handleAddAdmin(admin){
+  // FIX: admins used to live only in React state (useState([])), so they vanished
+  // on every refresh and could never log back in. They're now persisted to a
+  // Supabase "admins" table — see the setup SQL in REVISION_FEEDBACK / chat notes.
+  async function handleAddAdmin(admin){
     if(admins.length>=ADMIN_LIMIT){ showToast(`Admin limit of ${ADMIN_LIMIT} reached.`,"danger"); return; }
-    setAdmins(a=>[...a,admin]);
-    logActivity("admin-add",`New admin registered: ${admin.name} (@${admin.username})`);
-    showToast(`Admin account created for ${admin.name}.`);
+    const{data,error}=await supabase.from("admins").insert({
+      name:admin.name,
+      username:admin.username,
+      password:admin.password,
+      permissions:admin.permissions||[],
+    }).select().single();
+    if(error){
+      showToast("Failed to create admin: "+error.message,"danger");
+      return;
+    }
+    setAdmins(a=>[...a,data]);
+    await logActivity("admin-add",`New admin registered: ${data.name} (@${data.username})`);
+    showToast(`Admin account created for ${data.name}.`);
   }
-  function handleRemoveAdmin(id){
+  async function handleRemoveAdmin(id){
     const a=admins.find(x=>x.id===id);
+    const{error}=await supabase.from("admins").delete().eq("id",id);
+    if(error){
+      showToast("Failed to remove admin: "+error.message,"danger");
+      return;
+    }
     setAdmins(prev=>prev.filter(x=>x.id!==id));
     showToast(`Admin account for ${a?.name||"user"} removed.`,"danger");
   }
@@ -2003,7 +2212,7 @@ export default function AdminApp(){
           {page==="dashboard"&&<DashboardHome staff={staff} activity={activity} currentAdmin={currentAdmin} pendingLeaveCount={pendingLeaveCount} departments={departments}/>}
           {page==="staff"&&<StaffDirectory staff={staff} onEdit={m=>setEditTarget(m)} onDelete={handleDelete} onView={m=>setViewTarget(m)} departments={departments}/>}
           {page==="leave-requests"&&<LeaveRequestsAdmin requests={leaveRequests} onApprove={handleApproveLeave} onReject={handleRejectLeave} onRefresh={fetchAll}/>}
-          {page==="reports"&&<ReportsPage staff={staff} departments={departments}/>}
+          {page==="reports"&&<ReportsPage staff={staff} departments={departments} onImport={handleBulkImport}/>}
           {page==="activity"&&<AuditLog activity={activity}/>}
           {page==="settings"&&<SettingsPage admins={admins} onAdd={handleAddAdmin} onRemove={handleRemoveAdmin} departments={departments} onUpdateDepartments={setDepartments}/>}
           {page==="formbuilder"&&<FormBuilder fieldConfig={fieldConfig} onUpdate={setFieldConfig}/>}
