@@ -1,7 +1,8 @@
-import WorkplaceApp from './WorkplaceApp'
+
+import AdminApp from './adminapp'
 
 function App() {
-  return <WorkplaceApp />
+  return <AdminApp />
 }
 
 export default App

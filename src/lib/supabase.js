@@ -1,16 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey =
-  import.meta.env.VITE_SUPABASE_ANON_KEY ||
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseKey) {
+if (!supabaseUrl || !supabaseAnonKey) {
   console.warn(
-    "Missing Supabase environment variables. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (or VITE_SUPABASE_PUBLISHABLE_KEY)."
+    "Missing Supabase environment variables. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file and in Vercel."
   );
 }
 
-export const supabase = createClient(supabaseUrl || "", supabaseKey || "", {
-  auth: { persistSession: true, autoRefreshToken: true },
+export const supabase = createClient(supabaseUrl || "", supabaseAnonKey || "", {
+  auth: { persistSession: false },
 });
