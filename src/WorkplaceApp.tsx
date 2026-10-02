@@ -79,7 +79,8 @@ function Leave({user,profile}){
  useEffect(()=>{load()},[]);
  async function decide(id,status){setBusy(true);const r=await supabase.from("leave_requests").update({status}).eq("id",id);if(r.error)alert(r.error.message);await load();setBusy(false)}
  return <div><div className="page-head"><div><span className="eyebrow">HR</span><h2>Leave Requests</h2></div></div><Card>{items.map(x=><div className="approval-row" key={x.id}><div><strong>{x.staff_name||x.staffName||"Staff member"}</strong><small>{x.leave_type||x.leaveType||"Leave"} · {x.start_date||x.startDate||""} → {x.end_date||x.endDate||""}</small><small>{x.reason||""}</small></div><span className={"status "+String(x.status||"pending").toLowerCase()}>{x.status||"Pending"}</span>{can&&String(x.status).toLowerCase()==="pending"&&<div><Btn disabled={busy} onClick={()=>decide(x.id,"Approved")}>Approve</Btn> <Btn disabled={busy} onClick={()=>decide(x.id,"Rejected")}>Reject</Btn></div>}</div>)}{!items.length&&<Empty text="No leave requests found. Your existing leave_requests table is preserved."/>}</Card></div>
-}\nfunction Approvals({user,profile}){
+}
+function Approvals({user,profile}){
  const [items,setItems]=useState([]);const can=["owner","admin","hr","manager"].includes(profile?.role);
  async function load(){let q=supabase.from("approval_requests").select("*").order("created_at",{ascending:false});if(!can)q=q.eq("requester_id",user.id);const {data}=await q;setItems(data||[])}useEffect(()=>{load()},[can,user.id]);
  async function request(){await supabase.from("approval_requests").insert({type:"General request",requester_id:user.id,payload:{message:"New approval request"}});load()}async function decide(id,status){await supabase.from("approval_requests").update({status,approver_id:user.id,decided_at:new Date().toISOString()}).eq("id",id);load()}
